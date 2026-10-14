@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money Power</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+body { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.app-container { width: 100%; max-width: 480px; background: #fff; min-height: 100vh; box-shadow: 0 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; position: relative; overflow-x: hidden; }
+.screen { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 70px; }
+.screen.active { display: flex; }
+.header { background: #10b981; color: white; padding: 15px; text-align: left; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.logout-btn { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+.footer-nav { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 6px 0; z-index: 10; }
+.nav-item { text-align: center; font-size: 9px; color: #555; cursor: pointer; flex: 1; }
+.nav-item.active { color: #10b981; font-weight: bold; }
+input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+button { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+button:active { background: #059669; }
+.card { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.balance-card { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
+.today-income-card { background: linear-gradient(135deg, #28a745, #218838); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.refer-income-card { background: linear-gradient(135deg, #e67e22, #d35400); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.members-counter-card { background: linear-gradient(135deg, #6f42c1, #563d7c); color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; font-size: 15px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.copy-box { background: #e9ecef; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin: 10px 0; font-weight: bold; word-break: break-all; font-size: 13px; }
+.copy-btn { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; font-size: 14px; margin: 0; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 99999; padding: 20px; }
+.modal-box { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); text-align: left; max-height: 90vh; overflow-y: auto; }
+.chat-box { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 10px; height: 280px; overflow-y: auto; background: #f9f9f9; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 14px; word-break: break-word; }
+.msg.user { background: #dcf8c6; align-self: flex-end; }
+.msg.admin { background: #fff; border: 1px solid #ddd; align-self: flex-start; }
+.tab-toggle { display: flex; margin-bottom: 15px; background: #e9ecef; border-radius: 8px; overflow: hidden; border: 1px solid #ced4da; flex-direction: column; }
+.tab-btn { padding: 12px; text-align: center; background: #e9ecef; color: #495057; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; border-bottom: 1px solid #ced4da; }
+.tab-btn.active { background: #10b981; color: white; }
+</style>
+</head>
+<body>
+
+<!-- Custom Alert Modal Box -->
+<div id="custom-alert-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-box" style="text-align: center; max-width: 350px;">
+    <h3 id="custom-alert-title" style="color: #10b981; margin-bottom: 10px;">সতর্কতা / বার্তা</h3>
+    <p id="custom-alert-message" style="font-size: 14px; color: #333; line-height: 1.5; margin-bottom: 20px;"></p>
+    <button onclick="closeCustomAlert()" style="background: #10b981; margin-top: 0;">ঠিক আছে</button>
+  </div>
+</div>
+
+<!-- Admin Broadcast Live Announcement Modal -->
+<div id="admin-broadcast-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-box" style="text-align: center; border: 2px solid #10b981;">
+    <h3 id="broadcast-modal-title" style="color: #10b981; margin-bottom: 10px;">📢 গুরুত্বপূর্ণ নোটিশ</h3>
+    <p id="broadcast-modal-message" style="font-size: 14px; color: #333; line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap;"></p>
+    <button onclick="closeBroadcastModal()" style="background: #10b981; margin-top: 0;">বুঝেছি</button>
+  </div>
+</div>
+
+<!-- Deposit/Offer Payment Modal -->
+<div id="offer-deposit-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h4 style="color: #10b981;" id="modal-offer-heading">অফার পেমেন্ট</h4>
+      <button onclick="closeOfferDepositModal()" style="background: #dc3545; width: auto; padding: 4px 10px; margin: 0; font-size: 13px;">✕</button>
+    </div>
+    <div class="copy-box" style="background: #e8f4fd; border: 1px solid #bee5eb;">
+      <span id="modal-admin-pay-number">বিকাশ/নগদ: 01700000000</span>
+      <button class="copy-btn" onclick="copyAdminPayNumber()">নম্বর কপি</button>
+    </div>
+    <p style="font-size: 12px; color: #d9534f; line-height: 1.4; margin-bottom: 12px;">
+      ⚠ টাকা পাঠানোর পর সঠিক ট্রানজেকশন আইডি সহ নিচের ফর্মটি পূরণ করুন।
+    </p>
+    <input type="number" id="pay-modal-amount" placeholder="পেমেন্টের পরিমাণ" readonly style="background: #e9ecef;">
+    <select id="pay-modal-method">
+      <option value="bKash">বিকাশ (সেন্ড মানি/ক্যাশ আউট)</option>
+      <option value="Nagad">নগদ (সেন্ড মানি/ক্যাশ আউট)</option>
+    </select>
+    <div style="font-size: 12px; color: #555; margin-top: 5px;">যে নম্বর দিয়ে অ্যাকাউন্ট খোলা হয়েছে (অটো):</div>
+    <input type="text" id="pay-modal-user-acc" readonly style="background: #e9ecef; color: #555;">
+    <input type="text" id="pay-modal-sender-num" placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন তা লিখুন">
+    <input type="text" id="pay-modal-trxid" placeholder="ট্রানজেকশন আইডি (TrxID) দিন">
+    <button onclick="submitOfferPaymentRequest()" style="background: #28a745; margin-top: 5px;">পেমেন্ট রিকুয়েস্ট পাঠান</button>
+  </div>
+</div>
+
+<!-- Startup Modal -->
+<div id="about-modal" class="modal-overlay" style="display: flex;">
+  <div class="modal-box">
+    <h3 id="modal-title-text" style="color: #10b981; margin-bottom: 10px; text-align: center;">🌟 Money Power-এ আপনাকে স্বাগতম!</h3>
+    <p style="font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 15px;" id="modal-desc-text">
+      আপনাদের টাকা অন্য জায়গায় খাটিয়ে সেটি থেকে লাভ বের করে আপনাদের দেওয়া হয়। আমাদের টিম কাজ করে, আপনাদের কোনো কাজ করা লাগবে না। প্রতি অফারের মেয়াদ ১ মাস, ১ মাস পর আপনার জমানো টাকা তুলে নিতে পারবেন, আর চাইলে ৩৬৫ দিন রাখতে পারবেন। রেফার করে প্রতিদিন আকর্ষণীয় বোনাস জেতার সুযোগ রয়েছে!
+    </p>
+    <button onclick="closeAboutModal()" style="margin-top: 0; background: #28a745;">পড়েছি, প্রবেশ করুন</button>
+  </div>
+</div>
+
+<div class="app-container">
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="screen active" style="justify-content: center;">
+    <h2 id="login-screen-title" style="text-align: center; color: #10b981; margin-bottom: 10px;">💸 Money Power</h2>
+    <p id="login-screen-subtitle" style="text-align: center; color: #666; margin-bottom: 20px;">আপনার জমানো টাকা এক জায়গায় খাটিয়ে লভ্যাংশ নিন।</p>
+
+    <div class="tab-toggle" id="auth-tab-toggle-container">
+      <div id="btn-reg-tab" class="tab-btn active" onclick="switchAuthTab('register')">রেজিস্ট্রেশন (উপরে)</div>
+      <div id="btn-login-tab" class="tab-btn" onclick="switchAuthTab('login')">লগইন (নিচে)</div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="form-register">
+      <input type="text" id="reg-phone" placeholder="নতুন ফোন নম্বর দিন (যেমন: 017xxxxxxxx)">
+      <input type="password" id="reg-pass" placeholder="একটি শক্তিশালী পাসওয়ার্ড দিন">
+      <button onclick="handleRegister()" style="background: #28a745;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="form-login" style="display: none;">
+      <input type="text" id="login-phone" placeholder="আপনার ফোন নম্বর দিন">
+      <input type="password" id="login-pass" placeholder="আপনার পাসওয়ার্ড দিন">
+      <button onclick="handleLogin()" style="background: #10b981;">প্রবেশ করুন</button>
+    </div>
+  </div>
+
+  <!-- Main App Layout -->
+  <div id="main-app" style="display: none; flex: 1; flex-direction: column; position: relative; height: 100%;">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <div id="header-title" style="font-size: 16px; font-weight: bold;">হোম - আমার ড্যাশবোর্ড</div>
+        <div id="header-user-number" style="font-size: 20px; font-weight: bold; margin: 3px 0; letter-spacing: 1px;"></div>
+        <div id="header-account-age" style="font-size: 12px; color: #fff; font-weight: bold; margin-bottom: 2px;"></div>
+        <div id="header-sub-rule" style="font-size: 11px; color: #e0e0e0; font-weight: normal;">প্রতিদিন উইথড্র দিতে পারবেন</div>
+      </div>
+      <button class="logout-btn" onclick="logoutApp()">লগআউট</button>
+    </div>
+
+    <!-- 1. Home Screen -->
+    <div id="screen-home" class="screen active">
+      
+      <div id="home-live-notice-banner" class="card" style="background: #fff3cd; border-color: #ffeeba; display: none;">
+        <h4 style="color: #856404; margin-bottom: 4px;" id="live-notice-banner-title">📢 জরুরি নোটিশ</h4>
+        <p style="font-size: 13px; color: #856404; line-height: 1.4;" id="live-notice-banner-text"></p>
+      </div>
+
+      <div class="members-counter-card">
+        👥 মোট সক্রিয় সদস্য: <span id="display-total-members">0</span> জন
+      </div>
+
+      <div class="balance-card">
+        <p id="dashboard-card-title-text">আমার ড্যাশবোর্ড - মূল ব্যালেন্স</p>
+        <h1 id="user-balance">৳ ০</h1>
+      </div>
+
+      <div class="today-income-card">
+        <p style="font-size: 14px; font-weight: bold;" id="today-income-heading-text">📥 আজকের আয় (Today's Income)</p>
+        <h2 id="today-income-val" style="margin: 5px 0;">৳ ০</h2>
+        <p style="font-size: 12px; opacity: 0.9;" id="today-income-sub-text">প্রতিদিন অটো আয় আপনার অ্যাকাউন্টে জমা হচ্ছে</p>
+      </div>
+
+      <div class="card" style="background: #e8f4fd; border-color: #bee5eb;">
+        <h4 style="color: #0c5460; margin-bottom: 5px;">📊 অফার স্ট্যাটাস</h4>
+        <p style="font-size: 14px; color: #333;" id="active-offer-info">সক্রিয় অফার: কোনো অফার সিলেক্ট করা নেই</p>
+        <p style="font-size: 13px; color: #155724; margin-top: 5px;" id="daily-income-status">প্রতিদিন অটো আয় রেট: ৳ ০</p>
+        <p style="font-size: 12px; color: #d9534f; margin-top: 5px;" id="offer-expiry-status">মেয়াদ শেষ হবে: -</p>
+        <button id="cancel-offer-btn" onclick="cancelOffer()" style="background: #dc3545; display: none; font-size: 13px; padding: 8px; margin-top: 8px;">মেয়াদ শেষ করে অফার বাতিল করুন</button>
+      </div>
+
+      <h3>বিনিয়োগ অফারসমূহ</h3>
+      <div id="dynamic-offers-container"></div>
+    </div>
+
+    <!-- 2. Today's Income Screen -->
+    <div id="screen-today-income" class="screen">
+      <h3 id="today-page-main-header">📥 আজকের আয় বিবরণ</h3>
+      <div class="card" style="background: #e8f5e9; border-color: #c8e6c9;">
+        <h4 style="color: #2e7d32; margin-bottom: 5px;" id="today-page-card-title">আপনার বর্তমান জমানো দৈনিক আয়</h4>
+        <p style="font-size: 26px; font-weight: bold; color: #2e7d32; margin: 10px 0;" id="page-today-income-val">৳ ০</p>
+        <p style="font-size: 13px; color: #333; line-height: 1.4;">নিয়ম: দৈনিক আয় প্রতিদিন একবার উইথড্র অপশন থেকে তুলতে পারবেন।</p>
+      </div>
+    </div>
+
+    <!-- 3. Referral Screen -->
+    <div id="screen-refer" class="screen">
+      <h3>👥 বন্ধু রেফার করুন</h3>
+      <div class="refer-income-card" style="text-align: left; padding: 15px; margin-bottom: 15px;">
+        <p style="font-size: 13px; opacity: 0.9;">রেফার ইনকাম ব্যালেন্স (আলাদা)</p>
+        <h2 id="refer-page-income-val" style="margin: 5px 0;">৳ ০</h2>
+        <p style="font-size: 12px; opacity: 0.9;">মোট সফল রেফার: <span id="user-refer-count">০</span> টি</p>
+      </div>
+      <div class="card" style="background: #fff9e6; border-color: #ffeeba;">
+        <h4 style="color: #856404; margin-bottom: 8px;" id="refer-page-title">🎁 প্রতি রেফারে ৬৫০ টাকা বোনাস!</h4>
+        <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 10px;" id="refer-page-desc">আপনার নিজস্ব রেফার লিংকটি বন্ধুদের সাথে শেয়ার করুন। কেউ আপনার লিংক থেকে অ্যাকাউন্ট খুললে অ্যাডমিনের কাছে নোটিফিকেশন চলে যাবে!</p>
+        <p style="font-size: 12px; color: #d9534f; font-weight: bold; margin-bottom: 8px;">⚠ বিশেষ নোট: রেফার ইনকাম মূল ব্যালেন্স বা দৈনিক আرهای সাথে যোগ হয় না, এটি সম্পূর্ণ আলাদা। রেফার ইনকাম তুলতে উইথড্র অপশন ব্যবহার করুন।</p>
+        <p style="font-size: 12px; font-weight: bold; margin-bottom: 4px;">আপনার রেফার লিংক:</p>
+        <div class="copy-box">
+          <span id="my-refer-link">https://moneypower.app/ref?id=000000</span>
+          <button class="copy-btn" onclick="copyReferLink()">লিংক কপি করুন</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. About Us Screen -->
+    <div id="screen-deposit" class="screen">
+      <h3 id="about-us-header-title" style="margin-bottom: 10px; color: #10b981;">আমাদের সম্পর্কে জানুন</h3>
+      <div class="card" style="background: #fff; min-height: 300px;">
+        <p id="about-us-content-box" style="font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap;">এখানে অ্যাডমিন প্যানেল থেকে যা লিখবেন, সেটাই সুন্দরভাবে এখানে দেখাবে।</p>
+      </div>
+    </div>
+
+    <!-- 5. Withdraw Screen -->
+    <div id="screen-withdraw" class="screen">
+      <h3>উইথড্র অপশনসমূহ</h3>
+      <div class="tab-toggle" style="margin-bottom: 10px;">
+        <div id="btn-wd-main-tab" class="tab-btn active" onclick="switchWdTab('main')">মূল ব্যালেন্স উত্তোলন</div>
+        <div id="btn-wd-daily-tab" class="tab-btn" onclick="switchWdTab('daily')">দৈনিক আয় উত্তোলন</div>
+        <div id="btn-wd-refer-tab" class="tab-btn" onclick="switchWdTab('refer')">রেফার ইনকাম উত্তোলন</div>
+      </div>
+
+      <div id="form-wd-main" class="card">
+        <h4 style="color: #10b981; margin-bottom: 8px;">মূল ব্যালেন্স উত্তোলন</h4>
+        <p style="font-size: 12px; color: #d9534f; margin-bottom: 10px;" id="main-wd-rule-text">⚠ নোট: বড় অফার নিলে আগের ছোট অফারের বিনিয়োগকৃত টাকা এখান থেকে উইথড্র দিতে পারবেন।</p>
+        <input type="number" id="wd-main-amount" placeholder="উত্তোলনের পরিমাণ">
+        <select id="wd-main-method">
+          <option value="bKash">বিকাশ</option>
+          <option value="Nagad">নগদ</option>
+        </select>
+        <input type="text" id="wd-main-acc" placeholder="যে নম্বর দিয়ে অ্যাকাউন্ট খুলেছেন তা দিন">
+        <button onclick="requestMainWithdraw()" style="background: #10b981;">মূল ব্যালেন্স উইথড্র রিকুয়েস্ট পাঠান</button>
+      </div>
+
+      <div id="form-wd-daily" class="card" style="display: none;">
+        <h4 style="color: #28a745; margin-bottom: 8px;">দৈনিক আয় উত্তোলন (প্রতিদিন ১ বার)</h4>
+        <p style="font-size: 12px; color: #555; margin-bottom: 10px;" id="daily-wd-rule-text">⚠ নোট: দৈনিক আয় তুলে নিলে মূল ব্যালেন্স থেকে কেটে নেওয়া হবে, কিন্তু মূল বিনিয়োগের টাকা ঠিক থাকবে।</p>
+        <input type="number" id="wd-daily-amount" placeholder="উত্তোলনের পরিমাণ">
+        <select id="wd-daily-method">
+          <option value="bKash">বিকাশ</option>
+          <option value="Nagad">নগদ</option>
+        </select>
+        <input type="text" id="wd-daily-acc" placeholder="যে নম্বর দিয়ে অ্যাকাউন্ট খুলেছেন তা দিন">
+        <button onclick="requestDailyWithdraw()" style="background: #28a745;">দৈনিক আয় উইথড্র রিকুয়েস্ট পাঠান</button>
+      </div>
+
+      <div id="form-wd-refer" class="card" style="display: none;">
+        <h4 style="color: #e67e22; margin-bottom: 8px;">রেফার ইনকাম উত্তোলন (আলাদা ব্যালেন্স)</h4>
+        <p style="font-size: 12px; color: #d9534f; margin-bottom: 10px;" id="refer-wd-rule-text">⚠ শর্ত: কমপক্ষে ৩টি সফল রেফার থাকতে হবে। ৩টির বেশি হলেও সব উইথড্র দিতে পারবেন।</p>
+        <input type="number" id="wd-refer-amount" placeholder="উত্তোলনের পরিমাণ">
+        <select id="wd-refer-method">
+          <option value="bKash">বিকাশ</option>
+          <option value="Nagad">নগদ</option>
+        </select>
+        <input type="text" id="wd-refer-acc" placeholder="যে নম্বর দিয়ে অ্যাকাউন্ট খুলেছেন তা দিন">
+        <button onclick="requestReferWithdraw()" style="background: #e67e22;">রেফার ইনকাম উইথড্র রিকুয়েস্ট পাঠান</button>
+      </div>
+    </div>
+
+    <!-- 6. Chat Support Screen -->
+    <div id="screen-chat" class="screen">
+      <h3>সাপোর্ট ও চ্যাটিং</h3>
+      <div class="chat-box" id="chat-messages">
+        <div class="msg admin">অ্যাডমিন: আসসালামু আলাইকুম! Money Power-এ আপনাকে স্বাগতম।</div>
+      </div>
+      <div style="display: flex; gap: 5px;">
+        <input type="text" id="chat-input" placeholder="আপনার সমস্যা এখানে লিখুন..." style="margin:0;">
+        <button onclick="sendUserMessage()" style="margin:0; width: 80px; background: #10b981;">পাঠান</button>
+      </div>
+    </div>
+
+    <!-- Admin Control Panel -->
+    <div id="screen-admin" class="screen" style="background: #fffbe6;">
+      <h3 style="color: #b78103;">🛠 অ্যাডমিন কন্ট্রোল প্যানেল</h3>
+      
+      <div class="card" style="border-color: #28a745; background: #f0fdf4;">
+        <h4 style="color: #28a745; margin-bottom: 8px;">📥 'আজকের আয়' কার্ডের হেডিং ও সাবটাইটেল টেক্সট এডিট</h4>
+        <input type="text" id="adm-today-heading-input" placeholder="হেডিং টেক্সট">
+        <input type="text" id="adm-today-sub-input" placeholder="সাবটাইটেল">
+        <button onclick="adminUpdateTodayIncomeText()" style="background: #28a745;">'আজকের আয়' টেক্সট আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #ff9800; background: #fff8e1;">
+        <h4 style="color: #e65100; margin-bottom: 8px;">📢 সরাসরি লাইভ নোটিশ কন্ট্রোল (Instant User Broadcast)</h4>
+        <input type="text" id="adm-broadcast-title-input" placeholder="নোটিশের বিষয়">
+        <textarea id="adm-broadcast-msg-input" rows="3" placeholder="ইউজারদের কি জানাতে চান তা লিখুন..."></textarea>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="adminPublishNotice()" style="background: #28a745; margin:0; flex:1;">নোটিশ প্রচার (Publish) করুন</button>
+          <button onclick="adminClearNotice()" style="background: #dc3545; margin:0; flex:1;">নোটিশ বন্ধ করুন</button>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: #dc3545; background: #fff5f5;">
+        <h4 style="color: #dc3545; margin-bottom: 8px;">🔒 সিকিউরড অ্যাপ লক কন্ট্রোল (Emergency App Lock)</h4>
+        <input type="text" id="lock-verify-user" placeholder="সিকিউরিটি আইডি (Bangladesh183514)">
+        <input type="password" id="lock-verify-pass" placeholder="সিকিউরিটি পাসওয়ার্ড (admin183514)">
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+          <button onclick="adminSetAppLockWithVerification(true)" style="background: #dc3545; margin:0; flex:1;">অ্যাপ লক করুন</button>
+          <button onclick="adminSetAppLockWithVerification(false)" style="background: #28a745; margin:0; flex:1;">অ্যাপ আনলক করুন</button>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: #6f42c1; background: #f8f4ff;">
+        <h4 style="color: #6f42c1; margin-bottom: 8px;">💳 অ্যাডমিন পেমেন্ট নম্বর সেট করুন (বিকাশ/নগদ)</h4>
+        <input type="text" id="adm-pay-number-input" placeholder="যেমন: 017xxxxxxxx">
+        <button onclick="adminUpdatePayNumber()" style="background: #6f42c1;">পেমেন্ট নম্বর আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #6f42c1; background: #f8f4ff;">
+        <h4 style="color: #6f42c1; margin-bottom: 8px;">👥 ড্যাশবোর্ড সদস্য সংখ্যা বেজ (Base) সেট করুন</h4>
+        <input type="number" id="adm-member-base-input" placeholder="যেমন: 100">
+        <button onclick="adminUpdateMemberBase()" style="background: #6f42c1;">সদস্য বেজ সংখ্যা আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #ffc107; background: #fffdf4;">
+        <h4 style="color: #b78103; margin-bottom: 8px;">👥 সমস্ত রেজিস্টার্ড ইউজারদের তালিকা ও ব্যালেন্স এডিট</h4>
+        <div id="admin-user-list-container" style="font-size: 13px; max-height: 250px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; margin-bottom: 5px;">কোনো ইউজার নেই।</div>
+      </div>
+
+      <div class="card" style="border-color: #10b981; background: #f0fdf4;">
+        <h4 style="color: #10b981; margin-bottom: 8px;">📱 লগইন স্ক্রিন / অ্যাপ হেডিং টেক্সট পরিবর্তন</h4>
+        <input type="text" id="adm-app-title-input" placeholder="মূল শিরোনাম">
+        <input type="text" id="adm-app-subtitle-input" placeholder="সাব-টাইটেল">
+        <button onclick="adminUpdateAppHeader()" style="background: #10b981;">লগইন স্ক্রিন টেক্সট আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #f39c12; background: #fffdf4;">
+        <h4 style="color: #b78103; margin-bottom: 8px;">⚙ হোম পেজ হেডার টাইটেল ও উইথড্র নোটিশ</h4>
+        <input type="text" id="adm-header-title-input" placeholder="হেডার মূল টাইটেল">
+        <input type="text" id="adm-withdraw-notice-input" placeholder="উইথড্র নোটিশ">
+        <input type="text" id="adm-dashboard-title-input" placeholder="ড্যাশবোর্ড কার্ড টাইটেল">
+        <button onclick="adminUpdateHeaderAndNotice()" style="background: #f39c12;">হেডার ও নোটিশ টেক্সট আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #d35400; background: #fef5ec;">
+        <h4 style="color: #d35400; margin-bottom: 8px;">📤 উইথড্র ফর্মের ভেতরের নোট বা শর্তসমূহ</h4>
+        <textarea id="adm-main-wd-rule-input" rows="2" placeholder="মূল ব্যালেন্স উইথড্র নোট"></textarea>
+        <textarea id="adm-daily-wd-rule-input" rows="2" placeholder="দৈনিক আয় উইথড্র নোট"></textarea>
+        <textarea id="adm-refer-wd-rule-input" rows="2" placeholder="রেফার ইনকাম উইথড্র নোট"></textarea>
+        <button onclick="adminUpdateWithdrawRules()" style="background: #d35400;">উইথড্র নোট আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #10b981; background: #f0fdf4;">
+        <h4 style="color: #10b981; margin-bottom: 8px;">🌟 স্টার্টআপ মডাল টাইটেল ও কমন রুল</h4>
+        <input type="text" id="adm-modal-title-input" placeholder="মডাল টাইটেল">
+        <textarea id="adm-common-rule-input" rows="4" placeholder="সকল অফারের কমন শর্ত"></textarea>
+        <button onclick="adminUpdateCommonRule()" style="background: #10b981;">স্টার্টআপ মডাল আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #17a2b8; background: #e8f4f8;">
+        <h4 style="color: #17a2b8; margin-bottom: 8px;">📖 'আমাদের সম্পর্ক' পেজ এডিট</h4>
+        <input type="text" id="adm-about-title-input" placeholder="অ্যাবাউট পেজ শিরোনাম">
+        <textarea id="adm-about-desc-input" rows="6" placeholder="এখানে যা লিখবেন..."></textarea>
+        <button onclick="adminUpdateAboutUs()" style="background: #17a2b8;">আমাদের সম্পর্ক আপডেট করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #6f42c1; background: #f8f4ff;">
+        <h4 style="color: #6f42c1; margin-bottom: 8px;">➕ নতুন বিনিয়োগ অফার যোগ করুন</h4>
+        <input type="text" id="adm-offer-title" placeholder="অফারের নাম">
+        <input type="number" id="adm-offer-amount" placeholder="বিনিয়োগ পরিমাণ">
+        <input type="number" id="adm-offer-daily" placeholder="দৈনিক আয়">
+        <button onclick="adminAddNewOffer()" style="background: #6f42c1;">নতুন অফার যোগ করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #dc3545; background: #fff5f5;">
+        <h4 style="color: #dc3545; margin-bottom: 8px;">🗑️ বর্তমান অফার তালিকা</h4>
+        <div id="admin-offers-list-container" style="margin-bottom: 10px;"></div>
+        <button onclick="adminResetDefaultOffers()" style="background: #dc3545;">ডিফল্ট অফারস রিস্টোর করুন</button>
+      </div>
+
+      <div class="card" style="background: #e8f5e9; border-color: #28a745;">
+        <h4 style="color: #2e7d32; margin-bottom: 8px;">⚡ সকল অফারধারীদের দৈনিক আয় যোগ করুন</h4>
+        <button onclick="adminTriggerDailyIncomeForAll()" style="background: #28a745;">দৈনিক আয় যোগ করুন</button>
+      </div>
+
+      <div class="card" style="border-color: #28a745; background: #f0fdf4;">
+        <h4 style="color: #28a745;">📥 অ্যাকাউন্ট খোলার নোটিফিকেশন</h4>
+        <div id="admin-reg-notifications" style="font-size: 13px; max-height: 120px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; margin-top: 5px;">কোনো নোটিফিকেশন নেই।</div>
+      </div>
+
+      <div class="card" style="border-color: #6f42c1; background: #f8f4ff;">
+        <h4 style="color: #6f42c1;">🛒 অফার কেনার পেমেন্ট নোটিফিকেশন</h4>
+        <div id="admin-offer-notifications" style="font-size: 13px; max-height: 120px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; margin-top: 5px;">কোনো পেমেন্ট নোটিফিকেশন নেই।</div>
+      </div>
+
+      <div class="card" style="border-color: #dc3545; background: #fff5f5;">
+        <h4 style="color: #dc3545;">📤 টাকা তোলার (উইথড্র) রিকুয়েস্ট নোটিফিকেশন</h4>
+        <div id="admin-withdraw-notifications" style="font-size: 13px; max-height: 120px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; margin-top: 5px;">কোনো উইথড্র রিকুয়েস্ট নেই।</div>
+      </div>
+
+      <div class="card" style="border-color: #ffc107; background: #fffdf4;">
+        <h4 style="color: #b78103;">👥 রেফার নোটিফিকেশন</h4>
+        <div id="admin-refer-notifications" style="font-size: 13px; max-height: 120px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; margin-top: 5px;">কোনো রেফার নোটিফিকেশন নেই।</div>
+      </div>
+
+      <div class="card" style="border-color: #17a2b8; background: #e8f4f8;">
+        <h4 style="color: #17a2b8;">💬 লাইভ চ্যাট ম্যানেজমেন্ট</h4>
+        <div id="admin-chat-list" style="font-size: 13px; max-height: 180px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd;">কোনো চ্যাট মেসেজ নেই।</div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="footer-nav">
+      <div class="nav-item active" onclick="switchTab('home', this)">🏠 হোম</div>
+      <div class="nav-item" onclick="switchTab('today-income', this)">📥 আজকের আয়</div>
+      <div class="nav-item" onclick="switchTab('refer', this)">👥 রেফার</div>
+      <div class="nav-item" onclick="switchTab('deposit', this)">📖 আমাদের সম্পর্কে</div>
+      <div class="nav-item" onclick="switchTab('withdraw', this)">📤 উইথড্র</div>
+      <div class="nav-item" onclick="switchTab('chat', this)">💬 সাপোর্ট</div>
+      <div class="nav-item" id="admin-nav-btn" style="display:none; color: #b78103; font-weight: bold;" onclick="switchTab('admin', this)">🛠 অ্যাডমিন</div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase Realtime Database SDK & Core Script -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update, remove, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3SJKO6-7XMpHqGIb1kKHJcWn-6Znpano",
+    authDomain: "money-power-cd63a.firebaseapp.com",
+    databaseURL: "https://money-power-cd63a-default-rtdb.firebaseio.com",
+    projectId: "money-power-cd63a",
+    storageBucket: "money-power-cd63a.firebasestorage.app",
+    messagingSenderId: "655719421666",
+    appId: "1:655719421666:web:230b8af42f6eb38ef5f0bb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window.dbRef = { ref, set, get, onValue, update, remove, child };
+  window.database = db;
+
+  // Realtime Listeners for Live Sync
+  onValue(ref(db, 'settings'), (snapshot) => {
+    if (snapshot.exists()) {
+      let data = snapshot.val();
+      if(data.headerTitleText) { headerTitleText = data.headerTitleText; localStorage.setItem('moneyPowerHeaderTitle', headerTitleText); }
+      if(data.withdrawNoticeText) { withdrawNoticeText = data.withdrawNoticeText; localStorage.setItem('moneyPowerWithdrawNotice', withdrawNoticeText); }
+      if(data.dashboardTitleText) { dashboardTitleText = data.dashboardTitleText; localStorage.setItem('moneyPowerDashboardTitle', dashboardTitleText); }
+      if(data.todayHeadingText) { todayHeadingText = data.todayHeadingText; localStorage.setItem('moneyPowerTodayHeading', todayHeadingText); }
+      if(data.todaySubText) { todaySubText = data.todaySubText; localStorage.setItem('moneyPowerTodaySub', todaySubText); }
+      if(data.commonRuleText) { commonRuleText = data.commonRuleText; localStorage.setItem('moneyPowerCommonRule', commonRuleText); }
+      if(data.modalTitleText) { modalTitleText = data.modalTitleText; localStorage.setItem('moneyPowerModalTitle', modalTitleText); }
+      if(data.appTitleText) { appTitleText = data.appTitleText; localStorage.setItem('moneyPowerAppTitle', appTitleText); }
+      if(data.appSubtitleText) { appSubtitleText = data.appSubtitleText; localStorage.setItem('moneyPowerAppSubtitle', appSubtitleText); }
+      if(data.referTitleText) { referTitleText = data.referTitleText; localStorage.setItem('moneyPowerReferTitle', referTitleText); }
+      if(data.referDescText) { referDescText = data.referDescText; localStorage.setItem('moneyPowerReferDesc', referDescText); }
+      if(data.aboutTitleText) { aboutTitleText = data.aboutTitleText; localStorage.setItem('moneyPowerAboutTitle', aboutTitleText); }
+      if(data.aboutDescText) { aboutDescText = data.aboutDescText; localStorage.setItem('moneyPowerAboutDesc', aboutDescText); }
+      if(data.mainWdRuleText) { mainWdRuleText = data.mainWdRuleText; localStorage.setItem('moneyPowerMainWdRule', mainWdRuleText); }
+      if(data.dailyWdRuleText) { dailyWdRuleText = data.dailyWdRuleText; localStorage.setItem('moneyPowerDailyWdRule', dailyWdRuleText); }
+      if(data.referWdRuleText) { referWdRuleText = data.referWdRuleText; localStorage.setItem('moneyPowerReferWdRule', referWdRuleText); }
+      if(data.adminPayNumber) { adminPayNumber = data.adminPayNumber; localStorage.setItem('moneyPowerPayNumber', adminPayNumber); }
+      if(data.memberBaseCount !== undefined) { memberBaseCount = Number(data.memberBaseCount); localStorage.setItem('moneyPowerMemberBase', memberBaseCount); }
+      if(data.isAppLocked !== undefined) { isAppLocked = data.isAppLocked; localStorage.setItem('moneyPowerAppLocked', JSON.stringify(isAppLocked)); }
+      if(data.activeNoticeData) { activeNoticeData = data.activeNoticeData; localStorage.setItem('moneyPowerActiveNotice', JSON.stringify(activeNoticeData)); }
+
+      applyGlobalTextsToUI();
+      if(currentUser) updateUI();
+      checkAndShowUserNotice();
+    }
+  });
+
+  onValue(ref(db, 'users'), (snapshot) => {
+    if (snapshot.exists()) {
+      usersData = snapshot.val();
+      localStorage.setItem('moneyPowerUsers', JSON.stringify(usersData));
+      if(currentUser && currentUser.phone !== ADMIN_USER) {
+        if(usersData[currentUser.phone]) {
+          currentUser = usersData[currentUser.phone];
+          currentUser.phone = currentUser.phone || currentUser.phone;
+          updateUI();
+        }
+      }
+      renderAdminUserList();
+      updateUI();
+    }
+  });
+
+  onValue(ref(db, 'notifications'), (snapshot) => {
+    if (snapshot.exists()) {
+      let notifs = snapshot.val();
+      adminRegNotifs = notifs.reg || [];
+      adminOfferNotifs = notifs.offer || [];
+      adminWithdrawNotifs = notifs.withdraw || [];
+      adminReferNotifs = notifs.refer || [];
+      renderAdminNotifs();
+    }
+  });
+
+  onValue(ref(db, 'chats'), (snapshot) => {
+    if (snapshot.exists()) {
+      allChats = snapshot.val();
+      localStorage.setItem('moneyPowerChats', JSON.stringify(allChats));
+      if(currentUser && currentUser.phone !== ADMIN_USER) loadUserChat();
+      renderAdminChats();
+    }
+  });
+
+  onValue(ref(db, 'offers'), (snapshot) => {
+    if (snapshot.exists()) {
+      investmentOffers = snapshot.val();
+      localStorage.setItem('moneyPowerOffers', JSON.stringify(investmentOffers));
+      renderOffersOnHome();
+      renderAdminOffersList();
+    }
+  });
+
+  // Auto Login Persistence Check
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedPhone = localStorage.getItem('moneyPowerLoggedInUser');
+    if(savedPhone) {
+      setTimeout(async () => {
+        if(savedPhone === ADMIN_USER) {
+          openAdminPanel();
+        } else {
+          let snap = await get(child(ref(db), `users/${savedPhone}`));
+          if(snap.exists()) {
+            currentUser = snap.val();
+            currentUser.phone = savedPhone;
+            document.getElementById('auth-screen').classList.remove('active');
+            document.getElementById('main-app').style.display = 'flex';
+            document.getElementById('admin-nav-btn').style.display = 'none';
+            updateUI();
+            checkAndShowUserNotice();
+            loadUserChat();
+            switchTab('home', document.querySelectorAll('.footer-nav .nav-item')[0]);
+          }
+        }
+      }, 500);
+    }
+  });
+</script>
+
+<script>
+function showAlert(msg) {
+  let modalMsg = document.getElementById('custom-alert-message');
+  let modalOverlay = document.getElementById('custom-alert-modal');
+  if(modalMsg && modalOverlay) {
+    modalMsg.innerText = msg;
+    modalOverlay.style.display = 'flex';
+  }
+}
+function closeCustomAlert() {
+  document.getElementById('custom-alert-modal').style.display = 'none';
+}
+function closeBroadcastModal() {
+  document.getElementById('admin-broadcast-modal').style.display = 'none';
+}
+function closeAboutModal() {
+  document.getElementById('about-modal').style.display = 'none';
+}
+
+let usersData = JSON.parse(localStorage.getItem('moneyPowerUsers')) || {};
+let adminRegNotifs = [];
+let adminOfferNotifs = [];
+let adminWithdrawNotifs = [];
+let adminReferNotifs = [];
+let allChats = {};
+let memberBaseCount = Number(localStorage.getItem('moneyPowerMemberBase')) || 100;
+let adminPayNumber = localStorage.getItem('moneyPowerPayNumber') || "01700000000";
+let isAppLocked = JSON.parse(localStorage.getItem('moneyPowerAppLocked')) || false;
+let activeNoticeData = JSON.parse(localStorage.getItem('moneyPowerActiveNotice')) || null;
+
+let headerTitleText = localStorage.getItem('moneyPowerHeaderTitle') || "হোম - আমার ড্যাশবোর্ড";
+let withdrawNoticeText = localStorage.getItem('moneyPowerWithdrawNotice') || "প্রতিদিন উইথড্র দিতে পারবেন";
+let dashboardTitleText = localStorage.getItem('moneyPowerDashboardTitle') || "আমার ড্যাশবোর্ড - মূল ব্যালেন্স";
+let todayHeadingText = localStorage.getItem('moneyPowerTodayHeading') || "📥 আজকের আয় (Today's Income)";
+let todaySubText = localStorage.getItem('moneyPowerTodaySub') || "প্রতিদিন অটো আয় আপনার অ্যাকাউন্টে জমা হচ্ছে";
+let mainWdRuleText = localStorage.getItem('moneyPowerMainWdRule') || "⚠ নোট: বড় অফার নিলে আগের ছোট অফারের বিনিয়োগকৃত টাকা এখান থেকে উইথড্র দিতে পারবেন।";
+let dailyWdRuleText = localStorage.getItem('moneyPowerDailyWdRule') || "⚠ নোট: দৈনিক আয় তুলে নিলে মূল ব্যালেন্স থেকে কেটে নেওয়া হবে, কিন্তু মূল বিনিয়োগের টাকা ঠিক থাকবে।";
+let referWdRuleText = localStorage.getItem('moneyPowerReferWdRule') || "⚠ শর্ত: কমপক্ষে ৩টি সফল রেফার থাকতে হবে। ৩টির বেশি হলেও সব উইথড্র দিতে পারবেন।";
+let commonRuleText = localStorage.getItem('moneyPowerCommonRule') || "প্রতি অফারের মেয়াদ ১ মাস, ১ মাস পর আপনার জমানো টাকা তুলে নিতে পারবেন, আর চাইলে ৩৬৫ দিন রাখতে পারবেন। রেফার করে প্রতিদিন আকর্ষণীয় বোনাস জেতার সুযোগ রয়েছে!";
+let modalTitleText = localStorage.getItem('moneyPowerModalTitle') || "🌟 Money Power-এ আপনাকে স্বাগতম!";
+let appTitleText = localStorage.getItem('moneyPowerAppTitle') || "💸 Money Power";
+let appSubtitleText = localStorage.getItem('moneyPowerAppSubtitle') || "আপনার জমানো টাকা এক জায়গায় খাটিয়ে লভ্যাংশ নিন।";
+let referTitleText = localStorage.getItem('moneyPowerReferTitle') || "🎁 প্রতি রেফারে ৬৫০ টাকা বোনাস!";
+let referDescText = localStorage.getItem('moneyPowerReferDesc') || "আপনার নিজস্ব রেফার লিংকটি বন্ধুদের সাথে শেয়ার করুন। কেউ আপনার লিংক থেকে অ্যাকাউন্ট খুললে অ্যাডমিনের কাছে নোটিফিকেশন চলে যাবে!";
+let aboutTitleText = localStorage.getItem('moneyPowerAboutTitle') || "আমাদের সম্পর্কে জানুন";
+let aboutDescText = localStorage.getItem('moneyPowerAboutDesc') || "এখানে আমাদের কোম্পানি বা অ্যাপ সম্পর্কে বিস্তারিত তথ্য দেখতে পাবেন।";
+
+let defaultOffersObj = {
+  1: { title: "অফার ১: ৩০০০ টাকা", amount: 3000, daily: 100 },
+  2: { title: "অফার ২: ৬০০০ টাকা", amount: 6000, daily: 200 },
+  3: { title: "অফার ৩: ১০০০০ টাকা", amount: 10000, daily: 350 },
+  4: { title: "অফার ৪: ১৫০০০ টাকা", amount: 15000, daily: 500 }
+};
+let investmentOffers = JSON.parse(localStorage.getItem('moneyPowerOffers')) || defaultOffersObj;
+let currentUser = null;
+const ADMIN_USER = "Bangladesh183514";
+const ADMIN_PASS = "admin183514";
+let activePendingOffer = null;
+
+function applyGlobalTextsToUI() {
+  if(document.getElementById('login-screen-title')) document.getElementById('login-screen-title').innerText = appTitleText;
+  if(document.getElementById('login-screen-subtitle')) document.getElementById('login-screen-subtitle').innerText = appSubtitleText;
+  if(document.getElementById('header-title')) document.getElementById('header-title').innerText = headerTitleText;
+  if(document.getElementById('header-sub-rule')) document.getElementById('header-sub-rule').innerText = withdrawNoticeText;
+  if(document.getElementById('dashboard-card-title-text')) document.getElementById('dashboard-card-title-text').innerText = dashboardTitleText;
+  if(document.getElementById('today-income-heading-text')) document.getElementById('today-income-heading-text').innerText = todayHeadingText;
+  if(document.getElementById('today-income-sub-text')) document.getElementById('today-income-sub-text').innerText = todaySubText;
+  if(document.getElementById('modal-title-text')) document.getElementById('modal-title-text').innerText = modalTitleText;
+  if(document.getElementById('modal-desc-text')) document.getElementById('modal-desc-text').innerText = commonRuleText;
+  if(document.getElementById('refer-page-title')) document.getElementById('refer-page-title').innerText = referTitleText;
+  if(document.getElementById('refer-page-desc')) document.getElementById('refer-page-desc').innerText = referDescText;
+  if(document.getElementById('about-us-header-title')) document.getElementById('about-us-header-title').innerText = aboutTitleText;
+  if(document.getElementById('about-us-content-box')) document.getElementById('about-us-content-box').innerText = aboutDescText;
+  if(document.getElementById('main-wd-rule-text')) document.getElementById('main-wd-rule-text').innerText = mainWdRuleText;
+  if(document.getElementById('daily-wd-rule-text')) document.getElementById('daily-wd-rule-text').innerText = dailyWdRuleText;
+  if(document.getElementById('refer-wd-rule-text')) document.getElementById('refer-wd-rule-text').innerText = referWdRuleText;
+}
+
+applyGlobalTextsToUI();
+renderOffersOnHome();
+
+function checkAndShowUserNotice() {
+  if(!currentUser || currentUser.phone === ADMIN_USER) return;
+  let banner = document.getElementById('home-live-notice-banner');
+  let bannerTitle = document.getElementById('live-notice-banner-title');
+  let bannerText = document.getElementById('live-notice-banner-text');
+
+  if(activeNoticeData && activeNoticeData.title && activeNoticeData.message) {
+    if(banner) banner.style.display = 'block';
+    if(bannerTitle) bannerTitle.innerText = `📢 ${activeNoticeData.title}`;
+    if(bannerText) bannerText.innerText = activeNoticeData.message;
+
+    let seenNoticeId = sessionStorage.getItem('moneyPowerSeenNoticeId');
+    if(seenNoticeId != activeNoticeData.id) {
+      document.getElementById('broadcast-modal-title').innerText = activeNoticeData.title;
+      document.getElementById('broadcast-modal-message').innerText = activeNoticeData.message;
+      document.getElementById('admin-broadcast-modal').style.display = 'flex';
+      sessionStorage.setItem('moneyPowerSeenNoticeId', activeNoticeData.id);
+    }
+  } else {
+    if(banner) banner.style.display = 'none';
+  }
+}
+
+function renderOffersOnHome() {
+  let container = document.getElementById('dynamic-offers-container');
+  if(!container) return;
+  let html = '';
+  let purchasedOffers = (currentUser && currentUser.purchasedOffers) ? currentUser.purchasedOffers : [];
+  
+  for (let serial in investmentOffers) {
+    let offer = investmentOffers[serial];
+    if(offer) {
+      let isAlreadyPurchased = purchasedOffers.includes(offer.title);
+      let btnText = isAlreadyPurchased ? "এই অফার কিনেছেন" : "এই অফার নিন";
+      let btnStyle = isAlreadyPurchased ? "background: #28a745;" : "background: #10b981;";
+
+      html += `<div class="card">
+        <h4>[সিরিয়াল ${serial}] ${offer.title}</h4>
+        <p>বিনিয়োগ: ৳ ${offer.amount} | দৈনিক আয়: ৳ ${offer.daily}</p>
+        <p style="font-size: 12px; color: #666; margin-top: 4px;">${commonRuleText}</p>
+        <button style="${btnStyle}" onclick="openOfferDepositModal(${offer.amount}, ${offer.daily}, '${offer.title}')">${btnText}</button>
+      </div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+function openOfferDepositModal(amount, daily, name) {
+  if(!currentUser) return;
+  let purchasedOffers = currentUser.purchasedOffers || [];
+  if(purchasedOffers.includes(name)) {
+    showAlert('আপনি এই অফার কিনেছেন, দয়া করে অন্য অফার নিন।');
+    return;
+  }
+  activePendingOffer = { amount, daily, name };
+  document.getElementById('modal-offer-heading').innerText = `${name} - পেমেন্ট`;
+  document.getElementById('modal-admin-pay-number').innerText = `বিকাশ/নগদ: ${adminPayNumber}`;
+  document.getElementById('pay-modal-amount').value = amount;
+  document.getElementById('pay-modal-user-acc').value = currentUser.phone;
+  document.getElementById('pay-modal-sender-num').value = '';
+  document.getElementById('pay-modal-trxid').value = '';
+  document.getElementById('offer-deposit-modal').style.display = 'flex';
+}
+
+function closeOfferDepositModal() {
+  document.getElementById('offer-deposit-modal').style.display = 'none';
+  activePendingOffer = null;
+}
+function copyAdminPayNumber() {
+  navigator.clipboard.writeText(adminPayNumber);
+  showAlert('পেমেন্ট নম্বর কপি করা হয়েছে!');
+}
+
+function submitOfferPaymentRequest() {
+  if(!currentUser || !activePendingOffer) return;
+  let senderNum = document.getElementById('pay-modal-sender-num').value.trim();
+  let trxId = document.getElementById('pay-modal-trxid').value.trim();
+  let method = document.getElementById('pay-modal-method').value;
+
+  if(!senderNum || !trxId) {
+    showAlert('সেন্ডার নম্বর এবং ট্রানজেকশন আইডি (TrxID) দিন!');
+    return;
+  }
+
+  let offer = activePendingOffer;
+  currentUser.offerName = offer.name;
+  currentUser.activeOfferAmount = offer.amount;
+  currentUser.dailyIncome = offer.daily;
+  currentUser.offerExpiryTime = Date.now() + (30 * 24 * 60 * 60 * 1000);
+  currentUser.balance = Number(currentUser.balance || 0) + offer.amount;
+
+  if(!currentUser.purchasedOffers) currentUser.purchasedOffers = [];
+  if(!currentUser.purchasedOffers.includes(offer.name)) currentUser.purchasedOffers.push(offer.name);
+
+  usersData[currentUser.phone] = currentUser;
+  window.database.ref(`users/${currentUser.phone}`).set(currentUser);
+
+  let notifText = `🛒 [অফার পেমেন্ট] অ্যাকাউন্ট: ${currentUser.phone} | অফার: ${offer.name} (৳${offer.amount}) | মাধ্যম: ${method} | সেন্ডার: ${senderNum} | TrxID: ${trxId}`;
+  adminOfferNotifs.unshift(notifText);
+  window.database.ref('notifications/offer').set(adminOfferNotifs);
+
+  closeOfferDepositModal();
+  updateUI();
+  showAlert('পেমেন্ট রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!');
+}
+
+function handleRegister() {
+  let phone = document.getElementById('reg-phone').value.trim();
+  let pass = document.getElementById('reg-pass').value.trim();
+
+  if(!phone || !pass) {
+    showAlert('ফোন নম্বর ও পাসওয়ার্ড দিন!');
+    return;
+  }
+  if(phone === ADMIN_USER) {
+    showAlert('এটি দিয়ে অ্যাকাউন্ট খোলা নিষিদ্ধ!');
+    return;
+  }
+  if(isAppLocked) {
+    showAlert('⚠️ অ্যাপটি বর্তমানে সাময়িকভাবে লক করা রয়েছে।');
+    return;
+  }
+  if(usersData[phone]) {
+    showAlert('এই নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে!');
+    return;
+  }
+
+  let newUser = {
+    pass: pass,
+    balance: 0,
+    todayIncome: 0,
+    offerName: 'কোনো অফার নেই',
+    activeOfferAmount: 0,
+    dailyIncome: 0,
+    lastCreditedDate: '',
+    offerExpiryTime: 0,
+    purchasedOffers: [],
+    releasableAmount: 0,
+    hasUpgradedOffer: false,
+    referIncome: 0,
+    referCount: 0,
+    createdAt: new Date().getTime()
+  };
+
+  usersData[phone] = newUser;
+  window.database.ref(`users/${phone}`).set(newUser);
+
+  let regText = `👤 [নতুন অ্যাকাউন্ট] নম্বর: ${phone} | পাসওয়ার্ড: ${pass}`;
+  adminRegNotifs.unshift(regText);
+  window.database.ref('notifications/reg').set(adminRegNotifs);
+
+  showAlert('রেজিস্ট্রেশন সফল হয়েছে! লগইন করুন।');
+  document.getElementById('reg-phone').value = '';
+  document.getElementById('reg-pass').value = '';
+  switchAuthTab('login');
+}
+
+function handleLogin() {
+  let phone = document.getElementById('login-phone').value.trim();
+  let pass = document.getElementById('login-pass').value.trim();
+
+  if(!phone || !pass) {
+    showAlert('ফোন নম্বর ও পাসওয়ার্ড দিন!');
+    return;
+  }
+  if(phone === ADMIN_USER && pass === ADMIN_PASS) {
+    openAdminPanel();
+    return;
+  }
+  if(isAppLocked) {
+    showAlert('⚠️ অ্যাপটি বর্তমানে সাময়িকভাবে লক করা রয়েছে।');
+    return;
+  }
+  if(!usersData[phone] || usersData[phone].pass !== pass) {
+    showAlert('ভুল ফোন নম্বর বা পাসওয়ার্ড!');
+    return;
+  }
+
+  currentUser = usersData[phone];
+  currentUser.phone = phone;
+  localStorage.setItem('moneyPowerLoggedInUser', phone);
+
+  document.getElementById('auth-screen').classList.remove('active');
+  document.getElementById('main-app').style.display = 'flex';
+  document.getElementById('admin-nav-btn').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+
+  updateUI();
+  checkAndShowUserNotice();
+  loadUserChat();
+  switchTab('home', document.querySelectorAll('.footer-nav .nav-item')[0]);
+}
+
+function openAdminPanel() {
+  currentUser = { phone: ADMIN_USER, balance: 0 };
+  localStorage.setItem('moneyPowerLoggedInUser', ADMIN_USER);
+
+  document.getElementById('auth-screen').classList.remove('active');
+  document.getElementById('main-app').style.display = 'flex';
+  document.getElementById('admin-nav-btn').style.display = 'block';
+
+  document.getElementById('adm-today-heading-input').value = todayHeadingText;
+  document.getElementById('adm-today-sub-input').value = todaySubText;
+  document.getElementById('adm-header-title-input').value = headerTitleText;
+  document.getElementById('adm-withdraw-notice-input').value = withdrawNoticeText;
+  document.getElementById('adm-dashboard-title-input').value = dashboardTitleText;
+  document.getElementById('adm-main-wd-rule-input').value = mainWdRuleText;
+  document.getElementById('adm-daily-wd-rule-input').value = dailyWdRuleText;
+  document.getElementById('adm-refer-wd-rule-input').value = referWdRuleText;
+  document.getElementById('adm-modal-title-input').value = modalTitleText;
+  document.getElementById('adm-common-rule-input').value = commonRuleText;
+  document.getElementById('adm-app-title-input').value = appTitleText;
+  document.getElementById('adm-app-subtitle-input').value = appSubtitleText;
+  document.getElementById('adm-refer-title-input').value = referTitleText;
+  document.getElementById('adm-refer-desc-input').value = referDescText;
+  document.getElementById('adm-about-title-input').value = aboutTitleText;
+  document.getElementById('adm-about-desc-input').value = aboutDescText;
+  document.getElementById('adm-member-base-input').value = memberBaseCount;
+  document.getElementById('adm-pay-number-input').value = adminPayNumber;
+
+  if(activeNoticeData) {
+    document.getElementById('adm-broadcast-title-input').value = activeNoticeData.title || '';
+    document.getElementById('adm-broadcast-msg-input').value = activeNoticeData.message || '';
+  }
+
+  switchTab('admin', document.getElementById('admin-nav-btn'));
+  renderAdminNotifs();
+  renderAdminChats();
+  renderAdminOffersList();
+  renderAdminUserList();
+}
+
+function logoutApp() {
+  currentUser = null;
+  localStorage.removeItem('moneyPowerLoggedInUser');
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('auth-screen').classList.add('active');
+  document.getElementById('admin-nav-btn').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-phone').value = '';
+}
+
+function updateUI() {
+  if(!currentUser) return;
+  if(currentUser.phone !== ADMIN_USER && usersData[currentUser.phone]) {
+    currentUser = usersData[currentUser.phone];
+  }
+
+  document.getElementById('user-balance').innerText = '৳ ' + (currentUser.balance || 0);
+  document.getElementById('today-income-val').innerText = '৳ ' + (currentUser.todayIncome || 0);
+  document.getElementById('page-today-income-val').innerText = '৳ ' + (currentUser.todayIncome || 0);
+  document.getElementById('refer-page-income-val').innerText = '৳ ' + (currentUser.referIncome || 0);
+  document.getElementById('user-refer-count').innerText = currentUser.referCount || 0;
+
+  let realUserCount = Object.keys(usersData).length;
+  document.getElementById('display-total-members').innerText = memberBaseCount + realUserCount;
+  document.getElementById('active-offer-info').innerText = 'সক্রিয় অফার: ' + (currentUser.offerName || 'কোনো অফার নেই');
+  document.getElementById('daily-income-status').innerText = `প্রতিদিন অটো আয় রেট: ৳ ${currentUser.dailyIncome || 0}`;
+
+  let now = Date.now();
+  let expiryEl = document.getElementById('offer-expiry-status');
+  let cancelBtn = document.getElementById('cancel-offer-btn');
+  if(currentUser.offerExpiryTime && now < currentUser.offerExpiryTime) {
+    let remDays = Math.ceil((currentUser.offerExpiryTime - now) / (1000 * 60 * 60 * 24));
+    expiryEl.innerText = `মেয়াদ শেষ হতে বাকি: ${remDays} দিন`;
+    cancelBtn.style.display = 'none';
+  } else if(currentUser.offerExpiryTime && now >= currentUser.offerExpiryTime) {
+    expiryEl.innerText = `মেয়াদ শেষ হয়েছে!`;
+    cancelBtn.style.display = 'block';
+  } else {
+    expiryEl.innerText = `মেয়াদ শেষ হবে: -`;
+    cancelBtn.style.display = 'none';
+  }
+
+  if(currentUser.phone === ADMIN_USER) {
+    document.getElementById('header-user-number').innerText = "অ্যাডমিন প্যানেল";
+    document.getElementById('header-account-age').innerText = "";
+  } else {
+    document.getElementById('header-user-number').innerText = currentUser.phone;
+    let diffDays = Math.floor((Date.now() - (currentUser.createdAt || Date.now())) / (1000 * 60 * 60 * 24)) + 1;
+    document.getElementById('header-account-age').innerText = `অ্যাকাউন্টের বয়স: ${diffDays} দিন`;
+  }
+  document.getElementById('my-refer-link').innerText = window.location.origin + window.location.pathname + `?ref=${currentUser.phone}`;
+  renderOffersOnHome();
+}
+
+function switchTab(tabName, element) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  if(tabName === 'home') document.getElementById('screen-home').classList.add('active');
+  if(tabName === 'today-income') document.getElementById('screen-today-income').classList.add('active');
+  if(tabName === 'refer') document.getElementById('screen-refer').classList.add('active');
+  if(tabName === 'deposit') document.getElementById('screen-deposit').classList.add('active');
+  if(tabName === 'withdraw') document.getElementById('screen-withdraw').classList.add('active');
+  if(tabName === 'chat') { document.getElementById('screen-chat').classList.add('active'); loadUserChat(); }
+  if(tabName === 'admin') { document.getElementById('screen-admin').classList.add('active'); renderAdminUserList(); }
+
+  if(element) element.classList.add('active');
+  updateUI();
+}
+
+function switchAuthTab(tab) {
+  if(tab === 'register') {
+    document.getElementById('form-register').style.display = 'block';
+    document.getElementById('form-login').style.display = 'none';
+    document.getElementById('btn-reg-tab').classList.add('active');
+    document.getElementById('btn-login-tab').classList.remove('active');
+  } else {
+    document.getElementById('form-register').style.display = 'none';
+    document.getElementById('form-login').style.display = 'block';
+    document.getElementById('btn-reg-tab').classList.remove('active');
+    document.getElementById('btn-login-tab').classList.add('active');
+  }
+}
+function switchWdTab(tab) {
+  document.getElementById('form-wd-main').style.display = 'none';
+  document.getElementById('form-wd-daily').style.display = 'none';
+  document.getElementById('form-wd-refer').style.display = 'none';
+  document.getElementById('btn-wd-main-tab').classList.remove('active');
+  document.getElementById('btn-wd-daily-tab').classList.remove('active');
+  document.getElementById('btn-wd-refer-tab').classList.remove('active');
+
+  if(tab === 'main') { document.getElementById('form-wd-main').style.display = 'block'; document.getElementById('btn-wd-main-tab').classList.add('active'); }
+  if(tab === 'daily') { document.getElementById('form-wd-daily').style.display = 'block'; document.getElementById('btn-wd-daily-tab').classList.add('active'); }
+  if(tab === 'refer') { document.getElementById('form-wd-refer').style.display = 'block'; document.getElementById('btn-wd-refer-tab').classList.add('active'); }
+}
+
+function renderAdminNotifs() {
+  if(document.getElementById('admin-reg-notifications')) document.getElementById('admin-reg-notifications').innerHTML = adminRegNotifs.length ? adminRegNotifs.join('<br>') : 'কোনো নোটিফিকেশন নেই।';
+  if(document.getElementById('admin-offer-notifications')) document.getElementById('admin-offer-notifications').innerHTML = adminOfferNotifs.length ? adminOfferNotifs.join('<br>') : 'কোনো পেমেন্ট নোটিফিকেশন নেই।';
+  if(document.getElementById('admin-withdraw-notifications')) document.getElementById('admin-withdraw-notifications').innerHTML = adminWithdrawNotifs.length ? adminWithdrawNotifs.join('<br>') : 'কোনো উইথড্র রিকুয়েস্ট নেই।';
+  if(document.getElementById('admin-refer-notifications')) document.getElementById('admin-refer-notifications').innerHTML = adminReferNotifs.length ? adminReferNotifs.join('<br>') : 'কোনো রেফার নোটিফিকেশন নেই।';
+}
+
+function renderAdminUserList() {
+  let container = document.getElementById('admin-user-list-container');
+  if(!container) return;
+  let phones = Object.keys(usersData);
+  if(phones.length === 0) { container.innerHTML = 'কোনো ইউজার নেই।'; return; }
+  let html = '';
+  phones.forEach(phone => {
+    let u = usersData[phone];
+    html += `<div style="background: #f9f9f9; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px;">
+      <div style="font-size: 13px; margin-bottom: 5px;"><b>নম্বর:</b> ${phone} | ব্যালেন্স: ৳${u.balance||0} | আয়: ৳${u.todayIncome||0}</div>
+      <div style="display: flex; gap: 4px;">
+        <input type="number" id="edit-bal-${phone}" value="${u.balance||0}" placeholder="ব্যালেন্স" style="margin:0; padding:4px; font-size:11px; flex:1;">
+        <input type="number" id="edit-today-${phone}" value="${u.todayIncome||0}" placeholder="আজকের আয়" style="margin:0; padding:4px; font-size:11px; flex:1;">
+        <button onclick="adminSaveUserBalance('${phone}')" style="padding: 4px 8px; font-size: 11px; background: #10b981; margin:0; width:auto;">সেভ</button>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function adminSaveUserBalance(phone) {
+  if(!usersData[phone]) return;
+  usersData[phone].balance = Number(document.getElementById(`edit-bal-${phone}`).value);
+  usersData[phone].todayIncome = Number(document.getElementById(`edit-today-${phone}`).value);
+  window.database.ref(`users/${phone}`).set(usersData[phone]);
+  showAlert(`${phone} নম্বরের ডেটা আপডেট হয়েছে!`);
+}
+
+function sendUserMessage() {
+  let txt = document.getElementById('chat-input').value.trim();
+  if(!txt || !currentUser) return;
+  if(!allChats[currentUser.phone]) allChats[currentUser.phone] = [];
+  allChats[currentUser.phone].push({ sender: 'user', text: txt });
+  window.database.ref(`chats/${currentUser.phone}`).set(allChats[currentUser.phone]);
+  document.getElementById('chat-input').value = '';
+  loadUserChat();
+}
+
+function loadUserChat() {
+  if(!currentUser) return;
+  let chatBox = document.getElementById('chat-messages');
+  let msgs = allChats[currentUser.phone] || [];
+  let html = '<div class="msg admin">অ্যাডমিন: আসসালামু আলাইকুম!</div>';
+  msgs.forEach(m => { html += `<div class="msg ${m.sender}">${m.sender === 'user' ? 'আপনি' : 'অ্যাডমিন'}: ${m.text}</div>`; });
+  chatBox.innerHTML = html;
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function renderAdminChats() {
+  let container = document.getElementById('admin-chat-list');
+  if(!container) return;
+  let phones = Object.keys(allChats);
+  if(phones.length === 0) { container.innerHTML = 'কোনো চ্যাট নেই।'; return; }
+  let html = '';
+  phones.forEach(phone => {
+    let userMsgs = allChats[phone];
+    let lastMsg = userMsgs.length ? userMsgs[userMsgs.length - 1].text : '';
+    html += `<div><b>অ্যাকাউন্ট: ${phone}</b><br><span>শেষ মেসেজ: ${lastMsg}</span> <input type="text" id="reply-${phone}" placeholder="রিপ্লাই..." style="margin:2px 0;"> <button onclick="adminReplyChat('${phone}')" style="padding:4px;">রিপ্লাই</button> </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function adminReplyChat(phone) {
+  let txt = document.getElementById(`reply-${phone}`).value.trim();
+  if(!txt) return;
+  if(!allChats[phone]) allChats[phone] = [];
+  allChats[phone].push({ sender: 'admin', text: txt });
+  window.database.ref(`chats/${phone}`).set(allChats[phone]);
+  showAlert('রিপ্লাই পাঠানো হয়েছে!');
+}
+
+function renderAdminOffersList() {
+  let container = document.getElementById('admin-offers-list-container');
+  if(!container) return;
+  let html = '';
+  for (let serial in investmentOffers) {
+    let offer = investmentOffers[serial];
+    if(offer) {
+      html += `<div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 6px 10px; margin-bottom: 5px; border: 1px solid #ddd;">
+        <span style="font-size: 13px;"><b>${offer.title}</b> (৳${offer.amount})</span>
+        <button onclick="adminDeleteOffer(${serial})" style="padding: 2px 6px; font-size: 11px; background: #dc3545; margin:0; width:auto;">ডিলিট</button>
+      </div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+function adminDeleteOffer(serial) {
+  delete investmentOffers[serial];
+  window.database.ref('offers').set(investmentOffers);
+  showAlert('অফার ডিলিট করা হয়েছে!');
+}
+
+// Admin Global Updaters
+function adminUpdateTodayIncomeText() {
+  todayHeadingText = document.getElementById('adm-today-heading-input').value.trim();
+  todaySubText = document.getElementById('adm-today-sub-input').value.trim();
+  window.database.ref('settings').update({ todayHeadingText, todaySubText });
+  showAlert('আপডেট করা হয়েছে!');
+}
+
+function adminPublishNotice() {
+  let title = document.getElementById('adm-broadcast-title-input').value.trim();
+  let msg = document.getElementById('adm-broadcast-msg-input').value.trim();
+  if(!title || !msg) { showAlert('সব ফিল্ড পূরণ করুন!'); return; }
+  activeNoticeData = { title, message: msg, id: Date.now() };
+  window.database.ref('settings').update({ activeNoticeData });
+  showAlert('নোটিশ প্রচার করা হয়েছে!');
+}
+
+function adminClearNotice() {
+  activeNoticeData = null;
+  window.database.ref('settings').update({ activeNoticeData: null });
+  document.getElementById('home-live-notice-banner').style.display = 'none';
+  showAlert('নোটিশ বন্ধ করা হয়েছে!');
+}
+
+function adminSetAppLockWithVerification(status) {
+  let u = document.getElementById('lock-verify-user').value.trim();
+  let p = document.getElementById('lock-verify-pass').value.trim();
+  if(u === ADMIN_USER && p === ADMIN_PASS) {
+    isAppLocked = status;
+    window.database.ref('settings').update({ isAppLocked });
+    showAlert(status ? 'অ্যাপ লক করা হয়েছে!' : 'অ্যাপ আনলক করা হয়েছে!');
+  } else {
+    showAlert('ভুল সিকিউরিটি আইডি বা পাসওয়ার্ড!');
+  }
+}
+
+function adminUpdatePayNumber() {
+  adminPayNumber = document.getElementById('adm-pay-number-input').value.trim();
+  window.database.ref('settings').update({ adminPayNumber });
+  showAlert('পেমেন্ট নম্বর আপডেট হয়েছে!');
+}
+
+function adminUpdateMemberBase() {
+  memberBaseCount = Number(document.getElementById('adm-member-base-input').value);
+  window.database.ref('settings').update({ memberBaseCount });
+  showAlert('সদস্য বেজ আপডেট হয়েছে!');
+}
+
+function adminUpdateHeaderAndNotice() {
+  headerTitleText = document.getElementById('adm-header-title-input').value.trim();
+  withdrawNoticeText = document.getElementById('adm-withdraw-notice-input').value.trim();
+  dashboardTitleText = document.getElementById('adm-dashboard-title-input').value.trim();
+  window.database.ref('settings').update({ headerTitleText, withdrawNoticeText, dashboardTitleText });
+  showAlert('হেডার ও নোটিশ আপডেট হয়েছে!');
+}
+
+function adminUpdateWithdrawRules() {
+  mainWdRuleText = document.getElementById('adm-main-wd-rule-input').value.trim();
+  dailyWdRuleText = document.getElementById('adm-daily-wd-rule-input').value.trim();
+  referWdRuleText = document.getElementById('adm-refer-wd-rule-input').value.trim();
+  window.database.ref('settings').update({ mainWdRuleText, dailyWdRuleText, referWdRuleText });
+  showAlert('উইথড্র নোট আপডেট হয়েছে!');
+}
+
+function adminUpdateCommonRule() {
+  commonRuleText = document.getElementById('adm-common-rule-input').value.trim();
+  modalTitleText = document.getElementById('adm-modal-title-input').value.trim();
+  window.database.ref('settings').update({ commonRuleText, modalTitleText });
+  showAlert('স্টার্টআপ মডাল আপডেট হয়েছে!');
+}
+
+function adminUpdateAppHeader() {
+  appTitleText = document.getElementById('adm-app-title-input').value.trim();
+  appSubtitleText = document.getElementById('adm-app-subtitle-input').value.trim();
+  window.database.ref('settings').update({ appTitleText, appSubtitleText });
+  showAlert('অ্যাপের নাম ও বিবরণ আপডেট হয়েছে!');
+}
+
+function adminUpdateReferSettings() {
+  referTitleText = document.getElementById('adm-refer-title-input').value.trim();
+  referDescText = document.getElementById('adm-refer-desc-input').value.trim();
+  window.database.ref('settings').update({ referTitleText, referDescText });
+  showAlert('রেফার সেটিংস আপডেট হয়েছে!');
+}
+
+function adminUpdateAboutUs() {
+  aboutTitleText = document.getElementById('adm-about-title-input').value.trim();
+  aboutDescText = document.getElementById('adm-about-desc-input').value.trim();
+  window.database.ref('settings').update({ aboutTitleText, aboutDescText });
+  showAlert('আমাদের সম্পর্ক পেজ আপডেট হয়েছে!');
+}
+
+function adminAddNewOffer() {
+  let title = document.getElementById('adm-offer-title').value.trim();
+  let amount = Number(document.getElementById('adm-offer-amount').value);
+  let daily = Number(document.getElementById('adm-offer-daily').value);
+  if(!title || !amount || !daily) return;
+  let newSerial = Object.keys(investmentOffers).length + 1;
+  investmentOffers[newSerial] = { title, amount, daily };
+  window.database.ref('offers').set(investmentOffers);
+  showAlert('নতুন অফার যোগ করা হয়েছে!');
+}
+
+function adminResetDefaultOffers() {
+  investmentOffers = defaultOffersObj;
+  window.database.ref('offers').set(investmentOffers);
+  showAlert('ডিফল্ট অফার রিস্টোর করা হয়েছে!');
+}
+
+function adminTriggerDailyIncomeForAll() {
+  let todayStr = new Date().toDateString();
+  let count = 0;
+  for(let phone in usersData) {
+    let u = usersData[phone];
+    if(u && u.offerName && u.offerName !== 'কোনো অফার নেই' && u.dailyIncome > 0) {
+      if(u.lastCreditedDate !== todayStr) {
+        u.balance = Number(u.balance || 0) + Number(u.dailyIncome);
+        u.todayIncome = Number(u.todayIncome || 0) + Number(u.dailyIncome);
+        u.lastCreditedDate = todayStr;
+        count++;
+        window.database.ref(`users/${phone}`).set(u);
+      }
+    }
+  }
+  showAlert(`সফল! ${count} জনের দৈনিক আয় যোগ করা হয়েছে।`);
+}
+
+function cancelOffer() {
+  if(!currentUser) return;
+  currentUser.offerName = 'কোনো অফার নেই';
+  currentUser.activeOfferAmount = 0;
+  currentUser.dailyIncome = 0;
+  currentUser.offerExpiryTime = 0;
+  window.database.ref(`users/${currentUser.phone}`).set(currentUser);
+  updateUI();
+  showAlert('অফার বাতিল করা হয়েছে।');
+}
+
+function requestMainWithdraw() {
+  let acc = document.getElementById('wd-main-acc').value.trim();
+  let amt = Number(document.getElementById('wd-main-amount').value);
+  if(acc !== currentUser.phone || !amt) { showAlert('সঠিক তথ্য দিন!'); return; }
+  
+  let wdText = `📤 [মূল উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
+  adminWithdrawNotifs.unshift(wdText);
+  window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
+  showAlert('উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+}
+
+function requestDailyWithdraw() {
+  let acc = document.getElementById('wd-daily-acc').value.trim();
+  let amt = Number(document.getElementById('wd-daily-amount').value);
+  if(acc !== currentUser.phone || !amt) { showAlert('সঠিক তথ্য দিন!'); return; }
+
+  let wdText = `📤 [দৈনিক উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
+  adminWithdrawNotifs.unshift(wdText);
+  window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
+  showAlert('দৈনিক আয় উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+}
+
+function requestReferWithdraw() {
+  let acc = document.getElementById('wd-refer-acc').value.trim();
+  let amt = Number(document.getElementById('wd-refer-amount').value);
+  if(acc !== currentUser.phone || !amt) { showAlert('সঠিক তথ্য দিন!'); return; }
+
+  let wdText = `📤 [রেফার উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
+  adminWithdrawNotifs.unshift(wdText);
+  window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
+  showAlert('রেফার ইনকাম উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+}
+</script>
+
+</body>
+</html>
