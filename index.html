@@ -308,7 +308,7 @@ button:active { background: #059669; }
       </div>
 
       <div class="card" style="border-color: #ffc107; background: #fffdf4;">
-        <h4 style="color: #b78103; margin-bottom: 8px;">👥 সমস্ত রেজিস্টার্ড ইউজারদের তালিকা ও ব্যালেন্স এডিট</h4>
+        <h4 style="color: #b78103; margin-bottom: 8px;">👥 সমস্ত রেজিস্টার্ড ইউজারদের তালিকা ও ব্যালেন্স/বয়স এডিট</h4>
         <div id="admin-user-list-container" style="font-size: 13px; max-height: 250px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; margin-bottom: 5px;">কোনো ইউজার নেই।</div>
       </div>
 
@@ -464,9 +464,10 @@ button:active { background: #059669; }
       usersData = snapshot.val();
       localStorage.setItem('moneyPowerUsers', JSON.stringify(usersData));
       if(currentUser && currentUser.phone !== ADMIN_USER) {
-        if(usersData[currentUser.phone]) {
-          currentUser = usersData[currentUser.phone];
-          currentUser.phone = currentUser.phone || currentUser.phone;
+        let savedPhone = currentUser.phone;
+        if(usersData[savedPhone]) {
+          currentUser = usersData[savedPhone];
+          currentUser.phone = savedPhone;
           updateUI();
         }
       }
@@ -714,7 +715,7 @@ function submitOfferPaymentRequest() {
 
   closeOfferDepositModal();
   updateUI();
-  showAlert('পেমেন্ট রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!');
+  showAlert('সফলভাবে পেমেন্ট রিকুয়েস্ট পাঠানো হয়েছে!');
 }
 
 function handleRegister() {
@@ -762,7 +763,7 @@ function handleRegister() {
   adminRegNotifs.unshift(regText);
   window.database.ref('notifications/reg').set(adminRegNotifs);
 
-  showAlert('রেজিস্ট্রেশন সফল হয়েছে! লগইন করুন।');
+  showAlert('সফলভাবে রেজিস্ট্রেশন সম্পন্ন হয়েছে! এবার লগইন করুন।');
   document.getElementById('reg-phone').value = '';
   document.getElementById('reg-pass').value = '';
   switchAuthTab('login');
@@ -856,7 +857,9 @@ function logoutApp() {
 function updateUI() {
   if(!currentUser) return;
   if(currentUser.phone !== ADMIN_USER && usersData[currentUser.phone]) {
-    currentUser = usersData[currentUser.phone];
+    let activePhone = currentUser.phone;
+    currentUser = usersData[activePhone];
+    currentUser.phone = activePhone;
   }
 
   document.getElementById('user-balance').innerText = '৳ ' + (currentUser.balance || 0);
@@ -954,13 +957,22 @@ function renderAdminUserList() {
   let html = '';
   phones.forEach(phone => {
     let u = usersData[phone];
+    let currentAgeDays = Math.floor((Date.now() - (u.createdAt || Date.now())) / (1000 * 60 * 60 * 24)) + 1;
     html += `<div style="background: #f9f9f9; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 6px;">
       <div style="font-size: 13px; margin-bottom: 5px;"><b>নম্বর:</b> ${phone} | ব্যালেন্স: ৳${u.balance||0} | আয়: ৳${u.todayIncome||0}</div>
-      <div style="display: flex; gap: 4px;">
-        <input type="number" id="edit-bal-${phone}" value="${u.balance||0}" placeholder="ব্যালেন্স" style="margin:0; padding:4px; font-size:11px; flex:1;">
-        <input type="number" id="edit-today-${phone}" value="${u.todayIncome||0}" placeholder="আজকের আয়" style="margin:0; padding:4px; font-size:11px; flex:1;">
-        <button onclick="adminSaveUserBalance('${phone}')" style="padding: 4px 8px; font-size: 11px; background: #10b981; margin:0; width:auto;">সেভ</button>
+      <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 11px; width: 65px;">ব্যালেন্স:</span>
+        <input type="number" id="edit-bal-${phone}" value="${u.balance||0}" style="margin:0; padding:4px; font-size:11px; flex:1;">
       </div>
+      <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 11px; width: 65px;">আজকের আয়:</span>
+        <input type="number" id="edit-today-${phone}" value="${u.todayIncome||0}" style="margin:0; padding:4px; font-size:11px; flex:1;">
+      </div>
+      <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 11px; width: 65px;">বয়স (দিন):</span>
+        <input type="number" id="edit-age-${phone}" value="${currentAgeDays}" style="margin:0; padding:4px; font-size:11px; flex:1;">
+      </div>
+      <button onclick="adminSaveUserBalance('${phone}')" style="padding: 6px; font-size: 12px; background: #10b981; margin:0; width:100%;">এই ইউজারের ডেটা সেভ করুন</button>
     </div>`;
   });
   container.innerHTML = html;
@@ -970,8 +982,11 @@ function adminSaveUserBalance(phone) {
   if(!usersData[phone]) return;
   usersData[phone].balance = Number(document.getElementById(`edit-bal-${phone}`).value);
   usersData[phone].todayIncome = Number(document.getElementById(`edit-today-${phone}`).value);
+  let newAgeDays = Number(document.getElementById(`edit-age-${phone}`).value);
+  usersData[phone].createdAt = Date.now() - ((newAgeDays - 1) * 24 * 60 * 60 * 1000);
+
   window.database.ref(`users/${phone}`).set(usersData[phone]);
-  showAlert(`${phone} নম্বরের ডেটা আপডেট হয়েছে!`);
+  showAlert(`সফলভাবে ${phone} নম্বরের ডেটা আপডেট হয়েছে!`);
 }
 
 function sendUserMessage() {
@@ -1014,7 +1029,7 @@ function adminReplyChat(phone) {
   if(!allChats[phone]) allChats[phone] = [];
   allChats[phone].push({ sender: 'admin', text: txt });
   window.database.ref(`chats/${phone}`).set(allChats[phone]);
-  showAlert('রিপ্লাই পাঠানো হয়েছে!');
+  showAlert('সফলভাবে রিপ্লাই পাঠানো হয়েছে!');
 }
 
 function renderAdminOffersList() {
@@ -1036,7 +1051,7 @@ function renderAdminOffersList() {
 function adminDeleteOffer(serial) {
   delete investmentOffers[serial];
   window.database.ref('offers').set(investmentOffers);
-  showAlert('অফার ডিলিট করা হয়েছে!');
+  showAlert('সফলভাবে অফার ডিলিট করা হয়েছে!');
 }
 
 // Admin Global Updaters
@@ -1044,7 +1059,7 @@ function adminUpdateTodayIncomeText() {
   todayHeadingText = document.getElementById('adm-today-heading-input').value.trim();
   todaySubText = document.getElementById('adm-today-sub-input').value.trim();
   window.database.ref('settings').update({ todayHeadingText, todaySubText });
-  showAlert('আপডেট করা হয়েছে!');
+  showAlert('সফলভাবে আজকের আয় টেক্সট আপডেট হয়েছে!');
 }
 
 function adminPublishNotice() {
@@ -1053,14 +1068,14 @@ function adminPublishNotice() {
   if(!title || !msg) { showAlert('সব ফিল্ড পূরণ করুন!'); return; }
   activeNoticeData = { title, message: msg, id: Date.now() };
   window.database.ref('settings').update({ activeNoticeData });
-  showAlert('নোটিশ প্রচার করা হয়েছে!');
+  showAlert('সফলভাবে নোটিশ প্রচার করা হয়েছে!');
 }
 
 function adminClearNotice() {
   activeNoticeData = null;
   window.database.ref('settings').update({ activeNoticeData: null });
   document.getElementById('home-live-notice-banner').style.display = 'none';
-  showAlert('নোটিশ বন্ধ করা হয়েছে!');
+  showAlert('সফলভাবে নোটিশ বন্ধ করা হয়েছে!');
 }
 
 function adminSetAppLockWithVerification(status) {
@@ -1069,7 +1084,7 @@ function adminSetAppLockWithVerification(status) {
   if(u === ADMIN_USER && p === ADMIN_PASS) {
     isAppLocked = status;
     window.database.ref('settings').update({ isAppLocked });
-    showAlert(status ? 'অ্যাপ লক করা হয়েছে!' : 'অ্যাপ আনলক করা হয়েছে!');
+    showAlert(status ? 'সফলভাবে অ্যাপ লক করা হয়েছে!' : 'সফলভাবে অ্যাপ আনলক করা হয়েছে!');
   } else {
     showAlert('ভুল সিকিউরিটি আইডি বা পাসওয়ার্ড!');
   }
@@ -1078,13 +1093,13 @@ function adminSetAppLockWithVerification(status) {
 function adminUpdatePayNumber() {
   adminPayNumber = document.getElementById('adm-pay-number-input').value.trim();
   window.database.ref('settings').update({ adminPayNumber });
-  showAlert('পেমেন্ট নম্বর আপডেট হয়েছে!');
+  showAlert('সফলভাবে পেমেন্ট নম্বর আপডেট হয়েছে!');
 }
 
 function adminUpdateMemberBase() {
   memberBaseCount = Number(document.getElementById('adm-member-base-input').value);
   window.database.ref('settings').update({ memberBaseCount });
-  showAlert('সদস্য বেজ আপডেট হয়েছে!');
+  showAlert('সফলভাবে সদস্য বেজ আপডেট হয়েছে!');
 }
 
 function adminUpdateHeaderAndNotice() {
@@ -1092,7 +1107,7 @@ function adminUpdateHeaderAndNotice() {
   withdrawNoticeText = document.getElementById('adm-withdraw-notice-input').value.trim();
   dashboardTitleText = document.getElementById('adm-dashboard-title-input').value.trim();
   window.database.ref('settings').update({ headerTitleText, withdrawNoticeText, dashboardTitleText });
-  showAlert('হেডার ও নোটিশ আপডেট হয়েছে!');
+  showAlert('সফলভাবে হেডার ও নোটিশ আপডেট হয়েছে!');
 }
 
 function adminUpdateWithdrawRules() {
@@ -1100,35 +1115,35 @@ function adminUpdateWithdrawRules() {
   dailyWdRuleText = document.getElementById('adm-daily-wd-rule-input').value.trim();
   referWdRuleText = document.getElementById('adm-refer-wd-rule-input').value.trim();
   window.database.ref('settings').update({ mainWdRuleText, dailyWdRuleText, referWdRuleText });
-  showAlert('উইথড্র নোট আপডেট হয়েছে!');
+  showAlert('সফলভাবে উইথড্র নোট আপডেট হয়েছে!');
 }
 
 function adminUpdateCommonRule() {
   commonRuleText = document.getElementById('adm-common-rule-input').value.trim();
   modalTitleText = document.getElementById('adm-modal-title-input').value.trim();
   window.database.ref('settings').update({ commonRuleText, modalTitleText });
-  showAlert('স্টার্টআপ মডাল আপডেট হয়েছে!');
+  showAlert('সফলভাবে স্টার্টআপ মডাল আপডেট হয়েছে!');
 }
 
 function adminUpdateAppHeader() {
   appTitleText = document.getElementById('adm-app-title-input').value.trim();
   appSubtitleText = document.getElementById('adm-app-subtitle-input').value.trim();
   window.database.ref('settings').update({ appTitleText, appSubtitleText });
-  showAlert('অ্যাপের নাম ও বিবরণ আপডেট হয়েছে!');
+  showAlert('সফলভাবে অ্যাপের নাম ও বিবরণ আপডেট হয়েছে!');
 }
 
 function adminUpdateReferSettings() {
   referTitleText = document.getElementById('adm-refer-title-input').value.trim();
   referDescText = document.getElementById('adm-refer-desc-input').value.trim();
   window.database.ref('settings').update({ referTitleText, referDescText });
-  showAlert('রেফার সেটিংস আপডেট হয়েছে!');
+  showAlert('সফলভাবে রেফার সেটিংস আপডেট হয়েছে!');
 }
 
 function adminUpdateAboutUs() {
   aboutTitleText = document.getElementById('adm-about-title-input').value.trim();
   aboutDescText = document.getElementById('adm-about-desc-input').value.trim();
   window.database.ref('settings').update({ aboutTitleText, aboutDescText });
-  showAlert('আমাদের সম্পর্ক পেজ আপডেট হয়েছে!');
+  showAlert('সফলভাবে আমাদের সম্পর্ক পেজ আপডেট হয়েছে!');
 }
 
 function adminAddNewOffer() {
@@ -1139,13 +1154,13 @@ function adminAddNewOffer() {
   let newSerial = Object.keys(investmentOffers).length + 1;
   investmentOffers[newSerial] = { title, amount, daily };
   window.database.ref('offers').set(investmentOffers);
-  showAlert('নতুন অফার যোগ করা হয়েছে!');
+  showAlert('সফলভাবে নতুন অফার যোগ করা হয়েছে!');
 }
 
 function adminResetDefaultOffers() {
   investmentOffers = defaultOffersObj;
   window.database.ref('offers').set(investmentOffers);
-  showAlert('ডিফল্ট অফার রিস্টোর করা হয়েছে!');
+  showAlert('সফলভাবে ডিফল্ট অফার রিস্টোর করা হয়েছে!');
 }
 
 function adminTriggerDailyIncomeForAll() {
@@ -1174,7 +1189,7 @@ function cancelOffer() {
   currentUser.offerExpiryTime = 0;
   window.database.ref(`users/${currentUser.phone}`).set(currentUser);
   updateUI();
-  showAlert('অফার বাতিল করা হয়েছে।');
+  showAlert('সফলভাবে অফার বাতিল করা হয়েছে।');
 }
 
 function requestMainWithdraw() {
@@ -1185,7 +1200,7 @@ function requestMainWithdraw() {
   let wdText = `📤 [মূল উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
   adminWithdrawNotifs.unshift(wdText);
   window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
-  showAlert('উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('সফলভাবে উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
 }
 
 function requestDailyWithdraw() {
@@ -1196,7 +1211,7 @@ function requestDailyWithdraw() {
   let wdText = `📤 [দৈনিক উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
   adminWithdrawNotifs.unshift(wdText);
   window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
-  showAlert('দৈনিক আয় উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('সফলভাবে দৈনিক আয় উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
 }
 
 function requestReferWithdraw() {
@@ -1207,7 +1222,7 @@ function requestReferWithdraw() {
   let wdText = `📤 [রেফার উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
   adminWithdrawNotifs.unshift(wdText);
   window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
-  showAlert('রেফার ইনকাম উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('সফলভাবে রেফার ইনকাম উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
 }
 </script>
 
