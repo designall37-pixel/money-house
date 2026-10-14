@@ -428,7 +428,7 @@ button:active { background: #059669; }
   window.dbRef = { ref, set, get, onValue, update, remove, child };
   window.database = db;
 
-  // Realtime Listeners for Live Sync
+  // Realtime Listeners for Live Sync & Persistent User State
   onValue(ref(db, 'settings'), (snapshot) => {
     if (snapshot.exists()) {
       let data = snapshot.val();
@@ -505,7 +505,7 @@ button:active { background: #059669; }
     }
   });
 
-  // Auto Login Persistence Check
+  // Enhanced Auto Login Persistence Check on Load
   window.addEventListener('DOMContentLoaded', () => {
     const savedPhone = localStorage.getItem('moneyPowerLoggedInUser');
     if(savedPhone) {
@@ -517,6 +517,7 @@ button:active { background: #059669; }
           if(snap.exists()) {
             currentUser = snap.val();
             currentUser.phone = savedPhone;
+            usersData[savedPhone] = currentUser;
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('main-app').style.display = 'flex';
             document.getElementById('admin-nav-btn').style.display = 'none';
@@ -524,6 +525,8 @@ button:active { background: #059669; }
             checkAndShowUserNotice();
             loadUserChat();
             switchTab('home', document.querySelectorAll('.footer-nav .nav-item')[0]);
+          } else {
+            localStorage.removeItem('moneyPowerLoggedInUser');
           }
         }
       }, 500);
