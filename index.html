@@ -41,7 +41,7 @@ button:active { background: #059669; }
 <!-- Custom Alert Modal Box -->
 <div id="custom-alert-modal" class="modal-overlay" style="display: none;">
   <div class="modal-box" style="text-align: center; max-width: 350px;">
-    <h3 id="custom-alert-title" style="color: #10b981; margin-bottom: 10px;">সতর্কতা / বার্তা</h3>
+    <h3 id="custom-alert-title" style="color: #10b981; margin-bottom: 10px;">নোটিফিকেশন / বার্তা</h3>
     <p id="custom-alert-message" style="font-size: 14px; color: #333; line-height: 1.5; margin-bottom: 20px;"></p>
     <button onclick="closeCustomAlert()" style="background: #10b981; margin-top: 0;">ঠিক আছে</button>
   </div>
@@ -135,7 +135,6 @@ button:active { background: #059669; }
 
     <!-- 1. Home Screen -->
     <div id="screen-home" class="screen active">
-      
       <div id="home-live-notice-banner" class="card" style="background: #fff3cd; border-color: #ffeeba; display: none;">
         <h4 style="color: #856404; margin-bottom: 4px;" id="live-notice-banner-title">📢 জরুরি নোটিশ</h4>
         <p style="font-size: 13px; color: #856404; line-height: 1.4;" id="live-notice-banner-text"></p>
@@ -428,7 +427,7 @@ button:active { background: #059669; }
   window.dbRef = { ref, set, get, onValue, update, remove, child };
   window.database = db;
 
-  // Realtime Listeners for Live Sync & Persistent User State
+  // Realtime Listeners for Live Sync
   onValue(ref(db, 'settings'), (snapshot) => {
     if (snapshot.exists()) {
       let data = snapshot.val();
@@ -464,10 +463,8 @@ button:active { background: #059669; }
       usersData = snapshot.val();
       localStorage.setItem('moneyPowerUsers', JSON.stringify(usersData));
       if(currentUser && currentUser.phone !== ADMIN_USER) {
-        let savedPhone = currentUser.phone;
-        if(usersData[savedPhone]) {
-          currentUser = usersData[savedPhone];
-          currentUser.phone = savedPhone;
+        if(usersData[currentUser.phone]) {
+          currentUser = usersData[currentUser.phone];
           updateUI();
         }
       }
@@ -505,7 +502,7 @@ button:active { background: #059669; }
     }
   });
 
-  // Enhanced Auto Login Persistence Check on Load
+  // Auto Login Persistence Check
   window.addEventListener('DOMContentLoaded', () => {
     const savedPhone = localStorage.getItem('moneyPowerLoggedInUser');
     if(savedPhone) {
@@ -517,7 +514,6 @@ button:active { background: #059669; }
           if(snap.exists()) {
             currentUser = snap.val();
             currentUser.phone = savedPhone;
-            usersData[savedPhone] = currentUser;
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('main-app').style.display = 'flex';
             document.getElementById('admin-nav-btn').style.display = 'none';
@@ -525,8 +521,6 @@ button:active { background: #059669; }
             checkAndShowUserNotice();
             loadUserChat();
             switchTab('home', document.querySelectorAll('.footer-nav .nav-item')[0]);
-          } else {
-            localStorage.removeItem('moneyPowerLoggedInUser');
           }
         }
       }, 500);
@@ -666,7 +660,7 @@ function openOfferDepositModal(amount, daily, name) {
   if(!currentUser) return;
   let purchasedOffers = currentUser.purchasedOffers || [];
   if(purchasedOffers.includes(name)) {
-    showAlert('আপনি এই অফার কিনেছেন, দয়া করে অন্য অফার নিন।');
+    showAlert('⚠️ আপনি এই অফারটি আগেই গ্রহণ করেছেন!');
     return;
   }
   activePendingOffer = { amount, daily, name };
@@ -685,7 +679,7 @@ function closeOfferDepositModal() {
 }
 function copyAdminPayNumber() {
   navigator.clipboard.writeText(adminPayNumber);
-  showAlert('পেমেন্ট নম্বর কপি করা হয়েছে!');
+  showAlert('✅ পেমেন্ট নম্বরটি কপি করা হয়েছে!');
 }
 
 function submitOfferPaymentRequest() {
@@ -695,7 +689,7 @@ function submitOfferPaymentRequest() {
   let method = document.getElementById('pay-modal-method').value;
 
   if(!senderNum || !trxId) {
-    showAlert('সেন্ডার নম্বর এবং ট্রানজেকশন আইডি (TrxID) দিন!');
+    showAlert('⚠️ দয়া করে সেন্ডার নম্বর এবং ট্রানজেকশন আইডি (TrxID) দিন!');
     return;
   }
 
@@ -718,7 +712,7 @@ function submitOfferPaymentRequest() {
 
   closeOfferDepositModal();
   updateUI();
-  showAlert('সফলভাবে পেমেন্ট রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('✅ আপনার অফার পেমেন্ট রিকুয়েস্টটি সফলভাবে পাঠানো হয়েছে!');
 }
 
 function handleRegister() {
@@ -726,19 +720,19 @@ function handleRegister() {
   let pass = document.getElementById('reg-pass').value.trim();
 
   if(!phone || !pass) {
-    showAlert('ফোন নম্বর ও পাসওয়ার্ড দিন!');
+    showAlert('⚠️ দয়া করে সঠিক ফোন নম্বর ও পাসওয়ার্ড দিন!');
     return;
   }
   if(phone === ADMIN_USER) {
-    showAlert('এটি দিয়ে অ্যাকাউন্ট খোলা নিষিদ্ধ!');
+    showAlert('⚠️ এই নম্বর দিয়ে অ্যাকাউন্ট খোলা যাবে না!');
     return;
   }
   if(isAppLocked) {
-    showAlert('⚠️ অ্যাপটি বর্তমানে সাময়িকভাবে লক করা রয়েছে।');
+    showAlert('⚠️ অ্যাপটি বর্তমানে সাময়িকভাবে বন্ধ/লক করা রয়েছে!');
     return;
   }
   if(usersData[phone]) {
-    showAlert('এই নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে!');
+    showAlert('⚠️ এই নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে! লগইন করুন।');
     return;
   }
 
@@ -766,7 +760,7 @@ function handleRegister() {
   adminRegNotifs.unshift(regText);
   window.database.ref('notifications/reg').set(adminRegNotifs);
 
-  showAlert('সফলভাবে রেজিস্ট্রেশন সম্পন্ন হয়েছে! এবার লগইন করুন।');
+  showAlert('✅ রেজিস্ট্রেশন সফল হয়েছে! এবার লগইন করুন।');
   document.getElementById('reg-phone').value = '';
   document.getElementById('reg-pass').value = '';
   switchAuthTab('login');
@@ -777,19 +771,20 @@ function handleLogin() {
   let pass = document.getElementById('login-pass').value.trim();
 
   if(!phone || !pass) {
-    showAlert('ফোন নম্বর ও পাসওয়ার্ড দিন!');
+    showAlert('⚠️ দয়া করে ফোন নম্বর ও পাসওয়ার্ড দিন!');
     return;
   }
   if(phone === ADMIN_USER && pass === ADMIN_PASS) {
     openAdminPanel();
+    showAlert('✅ সফলভাবে অ্যাডমিন প্যানেলে প্রবেশ করেছেন!');
     return;
   }
   if(isAppLocked) {
-    showAlert('⚠️ অ্যাপটি বর্তমানে সাময়িকভাবে লক করা রয়েছে।');
+    showAlert('⚠️ অ্যাপটি বর্তমানে সাময়িকভাবে বন্ধ/লক করা রয়েছে!');
     return;
   }
   if(!usersData[phone] || usersData[phone].pass !== pass) {
-    showAlert('ভুল ফোন নম্বর বা পাসওয়ার্ড!');
+    showAlert('⚠️ ভুল ফোন নম্বর বা পাসওয়ার্ড দেওয়া হয়েছে!');
     return;
   }
 
@@ -806,6 +801,7 @@ function handleLogin() {
   checkAndShowUserNotice();
   loadUserChat();
   switchTab('home', document.querySelectorAll('.footer-nav .nav-item')[0]);
+  showAlert('✅ সফলভাবে লগইন হয়েছে!');
 }
 
 function openAdminPanel() {
@@ -855,14 +851,13 @@ function logoutApp() {
   document.getElementById('admin-nav-btn').style.display = 'none';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-phone').value = '';
+  showAlert('✅ সফলভাবে লগআউট করা হয়েছে!');
 }
 
 function updateUI() {
   if(!currentUser) return;
   if(currentUser.phone !== ADMIN_USER && usersData[currentUser.phone]) {
-    let activePhone = currentUser.phone;
-    currentUser = usersData[activePhone];
-    currentUser.phone = activePhone;
+    currentUser = usersData[currentUser.phone];
   }
 
   document.getElementById('user-balance').innerText = '৳ ' + (currentUser.balance || 0);
@@ -989,7 +984,7 @@ function adminSaveUserBalance(phone) {
   usersData[phone].createdAt = Date.now() - ((newAgeDays - 1) * 24 * 60 * 60 * 1000);
 
   window.database.ref(`users/${phone}`).set(usersData[phone]);
-  showAlert(`সফলভাবে ${phone} নম্বরের ডেটা আপডেট হয়েছে!`);
+  showAlert(`✅ সফলভাবে ${phone} নম্বরের ব্যালেন্স ও ডেটা সেভ হয়েছে!`);
 }
 
 function sendUserMessage() {
@@ -1000,6 +995,7 @@ function sendUserMessage() {
   window.database.ref(`chats/${currentUser.phone}`).set(allChats[currentUser.phone]);
   document.getElementById('chat-input').value = '';
   loadUserChat();
+  showAlert('✅ মেসেজ পাঠানো হয়েছে!');
 }
 
 function loadUserChat() {
@@ -1032,7 +1028,7 @@ function adminReplyChat(phone) {
   if(!allChats[phone]) allChats[phone] = [];
   allChats[phone].push({ sender: 'admin', text: txt });
   window.database.ref(`chats/${phone}`).set(allChats[phone]);
-  showAlert('সফলভাবে রিপ্লাই পাঠানো হয়েছে!');
+  showAlert('✅ ইউজারকে সফলভাবে রিপ্লাই পাঠানো হয়েছে!');
 }
 
 function renderAdminOffersList() {
@@ -1054,7 +1050,7 @@ function renderAdminOffersList() {
 function adminDeleteOffer(serial) {
   delete investmentOffers[serial];
   window.database.ref('offers').set(investmentOffers);
-  showAlert('সফলভাবে অফার ডিলিট করা হয়েছে!');
+  showAlert('✅ সফলভাবে অফারটি ডিলিট করা হয়েছে!');
 }
 
 // Admin Global Updaters
@@ -1062,23 +1058,23 @@ function adminUpdateTodayIncomeText() {
   todayHeadingText = document.getElementById('adm-today-heading-input').value.trim();
   todaySubText = document.getElementById('adm-today-sub-input').value.trim();
   window.database.ref('settings').update({ todayHeadingText, todaySubText });
-  showAlert('সফলভাবে আজকের আয় টেক্সট আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে আজকের আয় কার্ডের টেক্সট আপডেট হয়েছে!');
 }
 
 function adminPublishNotice() {
   let title = document.getElementById('adm-broadcast-title-input').value.trim();
   let msg = document.getElementById('adm-broadcast-msg-input').value.trim();
-  if(!title || !msg) { showAlert('সব ফিল্ড পূরণ করুন!'); return; }
+  if(!title || !msg) { showAlert('⚠️ দয়া করে সবকটি ঘর পূরণ করুন!'); return; }
   activeNoticeData = { title, message: msg, id: Date.now() };
   window.database.ref('settings').update({ activeNoticeData });
-  showAlert('সফলভাবে নোটিশ প্রচার করা হয়েছে!');
+  showAlert('✅ সফলভাবে নোটিশ ইউজারদের কাছে পপ-আপ করে প্রচার করা হয়েছে!');
 }
 
 function adminClearNotice() {
   activeNoticeData = null;
   window.database.ref('settings').update({ activeNoticeData: null });
   document.getElementById('home-live-notice-banner').style.display = 'none';
-  showAlert('সফলভাবে নোটিশ বন্ধ করা হয়েছে!');
+  showAlert('✅ সফলভাবে লাইভ নোটিশ বন্ধ করা হয়েছে!');
 }
 
 function adminSetAppLockWithVerification(status) {
@@ -1087,22 +1083,22 @@ function adminSetAppLockWithVerification(status) {
   if(u === ADMIN_USER && p === ADMIN_PASS) {
     isAppLocked = status;
     window.database.ref('settings').update({ isAppLocked });
-    showAlert(status ? 'সফলভাবে অ্যাপ লক করা হয়েছে!' : 'সফলভাবে অ্যাপ আনলক করা হয়েছে!');
+    showAlert(status ? '🔒 সফলভাবে অ্যাপটি লক করা হয়েছে!' : '🔓 সফলভাবে অ্যাপটি আনলক করা হয়েছে!');
   } else {
-    showAlert('ভুল সিকিউরিটি আইডি বা পাসওয়ার্ড!');
+    showAlert('⚠️ ভুল সিকিউরিটি আইডি বা পাসওয়ার্ড দেওয়া হয়েছে!');
   }
 }
 
 function adminUpdatePayNumber() {
   adminPayNumber = document.getElementById('adm-pay-number-input').value.trim();
   window.database.ref('settings').update({ adminPayNumber });
-  showAlert('সফলভাবে পেমেন্ট নম্বর আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে অ্যাডমিন পেমেন্ট নম্বর আপডেট হয়েছে!');
 }
 
 function adminUpdateMemberBase() {
   memberBaseCount = Number(document.getElementById('adm-member-base-input').value);
   window.database.ref('settings').update({ memberBaseCount });
-  showAlert('সফলভাবে সদস্য বেজ আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে সদস্য সংখ্যা আপডেট হয়েছে!');
 }
 
 function adminUpdateHeaderAndNotice() {
@@ -1110,7 +1106,7 @@ function adminUpdateHeaderAndNotice() {
   withdrawNoticeText = document.getElementById('adm-withdraw-notice-input').value.trim();
   dashboardTitleText = document.getElementById('adm-dashboard-title-input').value.trim();
   window.database.ref('settings').update({ headerTitleText, withdrawNoticeText, dashboardTitleText });
-  showAlert('সফলভাবে হেডার ও নোটিশ আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে হেডার ও উইথড্র নোটিশ আপডেট হয়েছে!');
 }
 
 function adminUpdateWithdrawRules() {
@@ -1118,52 +1114,52 @@ function adminUpdateWithdrawRules() {
   dailyWdRuleText = document.getElementById('adm-daily-wd-rule-input').value.trim();
   referWdRuleText = document.getElementById('adm-refer-wd-rule-input').value.trim();
   window.database.ref('settings').update({ mainWdRuleText, dailyWdRuleText, referWdRuleText });
-  showAlert('সফলভাবে উইথড্র নোট আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে উইথড্র শর্তসমূহ আপডেট হয়েছে!');
 }
 
 function adminUpdateCommonRule() {
   commonRuleText = document.getElementById('adm-common-rule-input').value.trim();
   modalTitleText = document.getElementById('adm-modal-title-input').value.trim();
   window.database.ref('settings').update({ commonRuleText, modalTitleText });
-  showAlert('সফলভাবে স্টার্টআপ মডাল আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে স্টার্টআপ মডাল আপডেট হয়েছে!');
 }
 
 function adminUpdateAppHeader() {
   appTitleText = document.getElementById('adm-app-title-input').value.trim();
   appSubtitleText = document.getElementById('adm-app-subtitle-input').value.trim();
   window.database.ref('settings').update({ appTitleText, appSubtitleText });
-  showAlert('সফলভাবে অ্যাপের নাম ও বিবরণ আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে অ্যাপের নাম ও বিবরণ আপডেট হয়েছে!');
 }
 
 function adminUpdateReferSettings() {
   referTitleText = document.getElementById('adm-refer-title-input').value.trim();
   referDescText = document.getElementById('adm-refer-desc-input').value.trim();
   window.database.ref('settings').update({ referTitleText, referDescText });
-  showAlert('সফলভাবে রেফার সেটিংস আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে রেফার সেটিংস আপডেট হয়েছে!');
 }
 
 function adminUpdateAboutUs() {
   aboutTitleText = document.getElementById('adm-about-title-input').value.trim();
   aboutDescText = document.getElementById('adm-about-desc-input').value.trim();
   window.database.ref('settings').update({ aboutTitleText, aboutDescText });
-  showAlert('সফলভাবে আমাদের সম্পর্ক পেজ আপডেট হয়েছে!');
+  showAlert('✅ সফলভাবে আমাদের সম্পর্কে পেজ আপডেট হয়েছে!');
 }
 
 function adminAddNewOffer() {
   let title = document.getElementById('adm-offer-title').value.trim();
   let amount = Number(document.getElementById('adm-offer-amount').value);
   let daily = Number(document.getElementById('adm-offer-daily').value);
-  if(!title || !amount || !daily) return;
+  if(!title || !amount || !daily) { showAlert('⚠️ অনুগ্রহ করে সবকটি অফার ফিল্ড পূরণ করুন!'); return; }
   let newSerial = Object.keys(investmentOffers).length + 1;
   investmentOffers[newSerial] = { title, amount, daily };
   window.database.ref('offers').set(investmentOffers);
-  showAlert('সফলভাবে নতুন অফার যোগ করা হয়েছে!');
+  showAlert('✅ সফলভাবে নতুন অফার যোগ করা হয়েছে!');
 }
 
 function adminResetDefaultOffers() {
   investmentOffers = defaultOffersObj;
   window.database.ref('offers').set(investmentOffers);
-  showAlert('সফলভাবে ডিফল্ট অফার রিস্টোর করা হয়েছে!');
+  showAlert('✅ সফলভাবে ডিফল্ট অফারসমূহ রিস্টোর করা হয়েছে!');
 }
 
 function adminTriggerDailyIncomeForAll() {
@@ -1181,7 +1177,7 @@ function adminTriggerDailyIncomeForAll() {
       }
     }
   }
-  showAlert(`সফল! ${count} জনের দৈনিক আয় যোগ করা হয়েছে।`);
+  showAlert(`✅ সফল! মোট ${count} জন অফারধারীর অ্যাকাউন্টে আজকের আয় যোগ করা হয়েছে।`);
 }
 
 function cancelOffer() {
@@ -1192,40 +1188,40 @@ function cancelOffer() {
   currentUser.offerExpiryTime = 0;
   window.database.ref(`users/${currentUser.phone}`).set(currentUser);
   updateUI();
-  showAlert('সফলভাবে অফার বাতিল করা হয়েছে।');
+  showAlert('✅ সফলভাবে আপনার অফারটি বাতিল করা হয়েছে!');
 }
 
 function requestMainWithdraw() {
   let acc = document.getElementById('wd-main-acc').value.trim();
   let amt = Number(document.getElementById('wd-main-amount').value);
-  if(acc !== currentUser.phone || !amt) { showAlert('সঠিক তথ্য দিন!'); return; }
+  if(acc !== currentUser.phone || !amt) { showAlert('⚠️ সঠিক অ্যাকাউন্ট নম্বর ও পরিমাণ দিন!'); return; }
   
   let wdText = `📤 [মূল উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
   adminWithdrawNotifs.unshift(wdText);
   window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
-  showAlert('সফলভাবে উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('✅ মূল ব্যালেন্স উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!');
 }
 
 function requestDailyWithdraw() {
   let acc = document.getElementById('wd-daily-acc').value.trim();
   let amt = Number(document.getElementById('wd-daily-amount').value);
-  if(acc !== currentUser.phone || !amt) { showAlert('সঠিক তথ্য দিন!'); return; }
+  if(acc !== currentUser.phone || !amt) { showAlert('⚠️ সঠিক অ্যাকাউন্ট নম্বর ও পরিমাণ দিন!'); return; }
 
   let wdText = `📤 [দৈনিক উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
   adminWithdrawNotifs.unshift(wdText);
   window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
-  showAlert('সফলভাবে দৈনিক আয় উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('✅ দৈনিক আয় উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!');
 }
 
 function requestReferWithdraw() {
   let acc = document.getElementById('wd-refer-acc').value.trim();
   let amt = Number(document.getElementById('wd-refer-amount').value);
-  if(acc !== currentUser.phone || !amt) { showAlert('সঠিক তথ্য দিন!'); return; }
+  if(acc !== currentUser.phone || !amt) { showAlert('⚠️ সঠিক অ্যাকাউন্ট নম্বর ও পরিমাণ দিন!'); return; }
 
   let wdText = `📤 [রেফার উইথড্র] অ্যাকাউন্ট: ${currentUser.phone} | পরিমাণ: ৳ ${amt}`;
   adminWithdrawNotifs.unshift(wdText);
   window.database.ref('notifications/withdraw').set(adminWithdrawNotifs);
-  showAlert('সফলভাবে রেফার ইনকাম উইথড্র রিকুয়েস্ট পাঠানো হয়েছে!');
+  showAlert('✅ রেফার ইনকাম উইথড্র রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!');
 }
 </script>
 
